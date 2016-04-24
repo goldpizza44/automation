@@ -1,0 +1,33 @@
+awk -F, '
+BEGIN {
+	getline
+	print $0
+	for(i=1;i<=NF;i++) col[$i]=i
+}
+{
+	minute=$1
+	sub(/:..$/,"",minute)
+	if(minute != lastminute) {
+		if(lastminute != "") printf("%s:00,%s,%3.2f,%3.2f,%3.2f,%3.2f,%s\n",
+			lastminute,
+			entry,
+			dht22_humidity/count,
+			dht22_temp/count,
+			ds18b20/count,
+			thermistor/count,
+			thermistor_raw/count)
+		dht22_humidity=dht22_temp=ds18b20=thermistor=thermistor_raw=count=0
+		lastminute=minute
+		entry++		
+	}
+
+	dht22_humidity += $(col["HUMIDITY"])
+	dht22_temp += $(col["DHT22_F"])
+	ds18b20 += $(col["DS18B20_F"])
+	thermistor += $(col["THERMISTOR"])
+	thermistor_raw += $(col["THERMISTOR_RAW"])
+
+	count++
+
+}
+' $1
