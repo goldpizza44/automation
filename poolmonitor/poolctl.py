@@ -1,4 +1,13 @@
 #!/usr/bin/python -u
+#
+# Customized Home Automation 
+#
+# Copyright (C) 2016, David Goldfarb
+#
+# Distributed under the terms of the GNU General Public License
+#
+# Written by David Goldfarb
+#
 
 import RPi.GPIO as GPIO
 import time

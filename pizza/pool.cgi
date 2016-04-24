@@ -1,4 +1,13 @@
 #!/bin/bash
+#
+# Customized Home Automation 
+#
+# Copyright (C) 2016, David Goldfarb
+#
+# Distributed under the terms of the GNU General Public License
+#
+# Written by David Goldfarb
+#
 
 DATE=$(date "+%Y/%m/%d")
 TIME=$(date "+%H:%M")

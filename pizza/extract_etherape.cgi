@@ -1,5 +1,13 @@
 #!/bin/bash
-
+#
+# Customized Home Automation 
+#
+# Copyright (C) 2016, David Goldfarb
+#
+# Distributed under the terms of the GNU General Public License
+#
+# Written by David Goldfarb
+#
 
 if [ "${REMOTE_ADDR%.*}" != 172.16.2 -a "${REMOTE_ADDR}" != 127.0.0.1 -a "${REMOTE_ADDR%%.*}" != 208 ] 
 then
