@@ -351,6 +351,7 @@ function automation(action) {
     var xhttp=new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (xhttp.readyState == 4 && xhttp.status == 200) {
+            var t=new Date()
             var xmldata=xhttp.responseXML
             // The XML will have 3 main sections:
             // <X10 settings> which contain the values of all the X10 modules
@@ -373,10 +374,11 @@ function automation(action) {
                         document.getElementById(id).innerHTML="OPEN"
                         document.getElementById(id).style.color="red"
                         
-                        var t=new Date()
                         if (t.getHours() >= 21 || t.getHours() <= 6) {
                                 document.getElementById('GarageDoorOpen_time').innerHTML=t.toString()
-                                 \$("#GarageDoorOpen").modal()
+                                \$("#clockpopup").modal("hide")
+                                \$("#voicemailpopup").modal("hide")
+                                \$("#GarageDoorOpen").modal()
                                 if ((t.getMinutes() % 5)==0 && disableGarageDoorSpeech==0 ) {
                                          var msg = new SpeechSynthesisUtterance('Check The Garage Door');
                                          window.speechSynthesis.speak(msg);
@@ -402,14 +404,21 @@ function automation(action) {
                 var callerID=vmail[i].getElementsByTagName("callerID")[0].childNodes[0].nodeValue
                 var duration=vmail[i].getElementsByTagName("duration")[0].childNodes[0].nodeValue
 
+
+
+
                 
                 var vmailhtml='<tr style="font-size: 250%" id="msg'+msgnum+'">'+
                               '<td rowspan=2>'+ msgnum +
                         '<br><button id="delete'+msgnum+'" onclick="automation('+"'"+'DELETE_VMAIL&msgnum='+msgnum+'&mbox='+mbox+"'"+')"      type="button" class="btn btn-lg" >DELETE</button>'+
                               '</td>'+
-                              '<td class="text-center">'+timestamp.split(" ")[0]+'<br>'+timestamp.split(" ")[1]+'</td>'+
-                              '<td style="font-weight:bold">'+callerID+'</td>'+
-                              '<td>'+duration+'</td>'+
+                              '<td class="text-center">'+timestamp.split(" ")[0]+'<br>'+timestamp.split(" ")[1]+'</td>'
+                if (vmail[i].getAttribute("new") == "YES") {
+                              vmailhtml=vmailhtml+'<td style="font-weight:bold;color:red">'+callerID+'</td>'
+                } else {
+                              vmailhtml=vmailhtml+'<td style="font-weight:bold">'+callerID+'</td>'
+                }
+                              vmailhtml=vmailhtml+'<td>'+duration+'</td>'+
 
                               '</tr>'+
                         '<tr valign=center><td colspan=3>'+
@@ -419,6 +428,14 @@ function automation(action) {
 
                 \$('#vmail_table').append(vmailhtml)
 
+                if (vmail[i].getAttribute("new") == "YES") {
+                        // Close any other modals that are open
+                        document.getElementById('NewVoicemail_time').innerHTML=t.toString()
+
+                        \$("#GarageDoorOpen").modal("hide")
+                        \$("#clockpopup").modal("hide")
+                        \$("#voicemailpopup").modal()
+                }
             }
         }
     };
@@ -652,6 +669,26 @@ function automation(action) {
       </div>
       <div class="modal-footer">
         <button type="button" id="disableGarageDoorSpeechButton" class="btn btn-info btn-lg" onclick="disableGarageDoorSpeech=1;this.style.backgroundColor='red';this.innerHTML='Speech Disabled'">Disable Voice Warning</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="modal fade" id="voicemailpopup" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">New Voicemail</h4>
+      </div>
+      <div class="modal-body">
+        <h1 style='color:red'>New Voicemail</h1>
+        <span id='NewVoicemail_time'>00:00:00</span>
+      </div>
+      <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>
