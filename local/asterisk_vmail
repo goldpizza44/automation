@@ -20,16 +20,22 @@ done
 function show_info {
 	gawk  -v OUTFORMAT=$FORMAT '
 BEGIN {
-	XMLformat="<vmail><mbox>%s</mbox><msgnum>%s</msgnum><timestamp>%s</timestamp><callerID>%s</callerID><duration>%s</duration></vmail>\n"
-	JSONformat="{voicemail: {mbox: \"%s\", msgnum: \"%s\", timestamp: \"%s\", callerID: \"%s\", duration: %d }}\n"
+	XMLformat="<vmail new=\"%s\"><mbox>%s</mbox><msgnum>%s</msgnum><timestamp>%s</timestamp><callerID>%s</callerID><duration>%s</duration></vmail>\n"
+	JSONformat="{voicemail: {new: \"%s\", mbox: \"%s\", msgnum: \"%s\", timestamp: \"%s\", callerID: \"%s\", duration: %d }}\n"
 
 	if ( OUTFORMAT=="XML") 	OUTFORMAT=XMLformat
 	else if (OUTFORMAT=="JSON") OUTFORMAT=JSONformat
 	else { printf("Unknown format %s\n",OUTFORMAT) > "/dev/stderr";exit }
+
+	newmsg="NO"
 }
 function printit() {
-	if ( mbox!= "Deleted") 	printf(OUTFORMAT,mbox,MSGNUM,timestamp,callerid,duration)
+	if ( mbox!= "Deleted") 	{
+		
+		printf(OUTFORMAT,newmsg,mbox,MSGNUM,timestamp,callerid,duration)
+	}
 	mbox=MSGNUM=timestamp=callerid=duration=""
+	newmsg="NO"
 }
 FNR==1 {
 	if (MSGNUM != "") printit()
@@ -42,7 +48,7 @@ FNR==1 {
 	sub(/.txt/,"",MSGNUM)
 }
 /callerid=/ {sub(/callerid=/,"",$0);gsub(/</,"\\&lt;",$0);gsub(/>/,"\\&gt;",$0);callerid=$0 }
-/origtime=/ {sub(/origtime=/,"",$0);timestamp=strftime("%Y/%m/%d %H:%M:%S",$0)}
+/origtime=/ {sub(/origtime=/,"",$0);timestamp=strftime("%Y/%m/%d %H:%M:%S",$0);if ((systime()-$0) < 300) newmsg="YES"}
 /duration=/ {sub(/duration=/,"",$0);duration=$0}
 END { printit() }
 
