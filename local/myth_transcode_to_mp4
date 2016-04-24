@@ -1,0 +1,74 @@
+#!/bin/bash
+
+while getopts "dzc:t:f:" opt
+do
+	case "${opt}" in 
+	d) DBUPDATEONLY=YES;;
+	z) # TIMEZONE in UTC...dont convert
+		export TZ=UTC;;
+	c) chanid=${OPTARG};;
+
+	t) starttime=${OPTARG};;
+
+	f) FILE=${OPTARG##*/}
+	   chanid=${FILE%%_*}
+	   starttime=${FILE##*_}
+	   starttime=${starttime%%.*}
+	   export TZ=UTC;;
+	
+	esac
+done
+
+shift $((OPTIND-1))
+
+if [[ -z "$chanid" || -z "starttime" ]]
+then
+	echo "USAGE: $0  -c chanid  -t YYYYMMDDHHMMSS [ -z ]"
+	exit
+fi
+
+# Convert the STARTTIME to UTC
+ST=$(echo $starttime | sed "s/\(....\)\(..\)\(..\)\(..\)\(..\)\(..\)/\1-\2-\3 \4:\5:\6/")
+STsec=$(date "+%s" --date "$ST")
+export TZ=UTC
+starttime=$(date "+%Y%m%d%H%M%S" --date=@$STsec)
+
+STARTCONV=$(date '+%Y/%m/%d %H:%M:%S')
+STARTSEC=$(date '+%s' --date="$STARTCONV")
+
+eval $(echo "Select C.chanid,C.channum,C.callsign,R.starttime,R.title,S.dirname,R.basename from recorded R, channel C, storagegroup S where S.hostname='$(uname -n)' and R.storagegroup=S.groupname and R.chanid=C.chanid and  C.chanid=$chanid and R.starttime='$starttime' ;" |mysql -s -u mythtv --password=mythtv mythconverg | gawk -F'	' '
+{gsub(/,/,"",$5);printf("export FILEDB=%s%s;export CHANNUM=%s;export CHANNAME=%s;export TITLE=\"%s\";",$6,$7,$2,$3,$5)}')
+
+[ -z "$FILE" ] && export FILE=$FILEDB
+
+export MP4FILE=${FILE%.*}.mp4
+
+echo FILE=$FILE   MP4FILE=$MP4FILE     DBUPDATEONLY=$DBUPDATEONLY
+
+if [ "$DBUPDATEONLY" != YES ]
+then
+	# If HandBrakeCLI returns failure don't update the database
+	HandBrakeCLI -Z "Android Tablet" -i $FILE --subtitle 1,2,3 -o $MP4FILE 
+	FAILCODE=$?
+else
+	FAILCODE=0
+fi
+
+FILESIZE=$(ls -ls $MP4FILE | gawk '{print $6}')
+
+if [ "$FAILCODE" == 0 ]
+then
+	echo "Updating Datbase"
+	echo "update recorded set basename='${MP4FILE##*/}',filesize=$FILESIZE where basename='${FILE##*/}';"|mysql -u mythtv --password=mythtv mythconverg
+fi
+
+for pngfile in ${FILE##*/}*png
+do
+	mp4png=$(echo $pngfile | sed "s/mpg/mp4/")
+	mv $pngfile $mp4png
+done
+
+let DURATION=$(date '+%s')-$STARTSEC
+echo "$(date '+%Y/%m/%d %H:%M:%S'),$STARTCONV,$DURATION,$FAILCODE,$FILE,$MP4FILE,$CHANNUM,$CHANNAME,$TITLE,$*" >> /mnt/videos/mythtv/myth_transcode_to_mp4.log
+
+rm -f $FILE

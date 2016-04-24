@@ -1,0 +1,49 @@
+#[ -s captions ] && mv captions captions.orig
+
+if [ -z "$1" ]
+then
+	echo "Usage: $0 \"Title of Photos\""
+	exit
+fi
+
+echo "Zipping all Photos into: ${PWD##*/}.zip"
+cp ${PWD##*/}.zip ${PWD##*/}.zip.sav
+if [ -r "newSCAN" ]
+then
+	find * -type f -name "*[jJ][pP][gG]" -newer newSCAN | zip ${PWD##*/}.zip -@  2>/dev/null
+	find * -type f -name "*[jJ][pP][gG]" -newer newSCAN | xargs resize_photo_480x640
+else
+	zip ${PWD##*/}.zip *.jpg *.JPG *.png  2>/dev/null
+fi
+
+if [ ! -r captions ]
+then
+echo "Title	$1" > captions
+echo "Zipfile	${PWD##*/}.zip" >> captions
+echo "Intro" >> captions
+echo "!" >> captions
+fi
+if [ ! -r newSCAN ]
+then
+find * -type f -name "*[jJmMfp][4pPln][gGv4]"  2>/dev/null >> captions
+else
+find * -type f -name "*[jJmMfp][4pPln][gGv4]" -newer newSCAN 2>/dev/null >> captions
+fi
+# remove newSCAN.  It will be recreated if we scan more photos
+[ -r newSCAN ] && rm newSCAN
+
+/usr/local/bin/resize_photo_640x480 *.jpg *.JPG
+
+exiftool *.jpg *JPG|gawk '/File Name/ {F=$NF}/Orientation/{printf("%s      %s\n",F,$0)}'
+exiftool *.jpg *JPG|gawk '/File Name/ {F=$NF}/Orientation/{printf("%s      %s\n",F,$0)}'|gawk '
+/Rotate 90 CW/ {r90=r90" "$1}
+/Rotate 180/ {r180=r180" "$1}
+/Rotate 270 CW/ {r270=r270" "$1}
+END {
+	if (r90 != "") printf("rotate_photo_90 %s\n",r90)
+	if (r180 != "") printf("rotate_photo_90 %s;rotate_photo_90 %s\n",r180,r180)
+	if (r270 != "") printf("rotate_photo_270 %s\n",r270)
+}
+'
+#eog *jpg *JPG &
+make_captions_index > index.html

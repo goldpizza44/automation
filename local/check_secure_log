@@ -1,0 +1,10 @@
+LOGFILE=${1:-/var/log/secure}
+
+echo
+echo 'Attempted logins with Failed Password":'
+grep "Failed password" $LOGFILE|cut -f1,4 -d: | sed "s/Failed pass.*from//;s/port.*//" |  sort | uniq -c | sort  -n|sed "s/:/:xx	/"
+echo
+echo 'Attempted logins with Accepted Password":'
+grep "Accepted" $LOGFILE
+
+ 

@@ -1,0 +1,69 @@
+context="default"
+extension="2201"
+
+VMAILBASE=/var/spool/asterisk/voicemail/$context/$extension
+
+cd $VMAILBASE
+FORMAT="XML"
+ACTION="INFO"
+
+while getopts "f:m:M:a:" opt
+do
+	case "${opt}" in 
+	f) FORMAT=${OPTARG};;
+	m) MBOX=${OPTARG};;
+	M) MSGNUM=${OPTARG};;
+	a) ACTION=${OPTARG};;
+	esac
+done
+
+function show_info {
+	gawk  -v OUTFORMAT=$FORMAT '
+BEGIN {
+	XMLformat="<vmail><mbox>%s</mbox><msgnum>%s</msgnum><timestamp>%s</timestamp><callerID>%s</callerID><duration>%s</duration></vmail>\n"
+	JSONformat="{voicemail: {mbox: \"%s\", msgnum: \"%s\", timestamp: \"%s\", callerID: \"%s\", duration: %d }}\n"
+
+	if ( OUTFORMAT=="XML") 	OUTFORMAT=XMLformat
+	else if (OUTFORMAT=="JSON") OUTFORMAT=JSONformat
+	else { printf("Unknown format %s\n",OUTFORMAT) > "/dev/stderr";exit }
+}
+function printit() {
+	if ( mbox!= "Deleted") 	printf(OUTFORMAT,mbox,MSGNUM,timestamp,callerid,duration)
+	mbox=MSGNUM=timestamp=callerid=duration=""
+}
+FNR==1 {
+	if (MSGNUM != "") printit()
+
+	split(FILENAME,a,"/")
+	mbox=a[1]
+	MSGNUM=a[2]
+
+	sub(/^msg/,"",MSGNUM);
+	sub(/.txt/,"",MSGNUM)
+}
+/callerid=/ {sub(/callerid=/,"",$0);gsub(/</,"\\&lt;",$0);gsub(/>/,"\\&gt;",$0);callerid=$0 }
+/origtime=/ {sub(/origtime=/,"",$0);timestamp=strftime("%Y/%m/%d %H:%M:%S",$0)}
+/duration=/ {sub(/duration=/,"",$0);duration=$0}
+END { printit() }
+
+' */*.txt
+}
+
+case $ACTION in
+"INFO")	show_info
+	;;
+"DELETE")
+	if [ ! -s "${MBOX}/msg${MSGNUM}.wav" ]
+	then
+		echo "<ERROR>${MBOX}/msg${MSGNUM}.wav doesn't exist</ERROR>"
+		exit
+	fi
+	
+	for f in ${MBOX}/msg${MSGNUM}*
+	do
+		mv $f Deleted
+	done
+	
+	show_info
+	;;
+esac

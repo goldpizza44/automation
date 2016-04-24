@@ -1,0 +1,1 @@
+ffmpeg -i $1 -y -skip_threshold 0 -rc_buf_aggressivity 0 -bufsize 6000k -rc_init_occupancy 4000 -threads 4 -deadline good -cpu-used 0 -vb 1024k -vcodec libvpx -aspect 640:480 -g 250 -vf scale=640:480 -aq 3 -acodec libvorbis -f webm ${1%.*}.webm

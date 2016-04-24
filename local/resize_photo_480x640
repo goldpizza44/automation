@@ -1,0 +1,6 @@
+for i in $*
+do
+	echo $i
+	convert $i -resize 480x640 x.${i##*.}
+	mv x.${i##*.} $i
+done
