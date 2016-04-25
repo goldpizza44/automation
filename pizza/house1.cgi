@@ -737,7 +737,7 @@ function automation(action) {
 
 //The clock will popup big with this eventListener
 document.getElementById("clock").addEventListener('click',function() {
-        \$("#clockpopup").modal({backdrop: false})
+        \$("#clockpopup").modal()
 },false);
 
 \$('body').css('zoom', '110%');
