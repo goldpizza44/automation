@@ -30,8 +30,13 @@ Content-Type: text/html
 <head>
     <link rel="stylesheet" href="http://pizza.goldfarbs.net/bootstrap/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="http://pizza.goldfarbs.net/bootstrap/css/horiz_tabscroll.css"/>
+    <link rel="stylesheet" href="http://pizza.goldfarbs.net/fullcalendar/fullcalendar.css"/>
+    <link rel="stylesheet" href="http://pizza.goldfarbs.net/fullcalendar/fullcalendar.print.css" media="print" />
+
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
     <script type="text/javascript" src="http://pizza.goldfarbs.net/bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="http://pizza.goldfarbs.net/fullcalendar/lib/moment.min.js"></script>
+    <script type="text/javascript" src="http://pizza.goldfarbs.net/fullcalendar/fullcalendar.js"></script>
     <script type="text/javascript" src="http://pizza.goldfarbs.net/RGraph/libraries/RGraph.common.core.js" ></script>
     <script type="text/javascript" src="http://pizza.goldfarbs.net/RGraph/libraries/RGraph.line.js" ></script>
     <script type="text/javascript" src="http://pizza.goldfarbs.net/RGraph/libraries/RGraph.common.key.js" ></script>
@@ -41,6 +46,7 @@ Content-Type: text/html
 <script type="text/javascript">
 var datasize=${DataSize}
 var humidity_line, patiotemp_line, pumptemp_line, pooltemp_line,dateaxis;
+var nikita_line,daniel_line,alexander_line,guest_line,hall_line;
 var labels = new Array (datasize);
 var datelabels = new Array (datasize);
 var firstload=1;
@@ -54,20 +60,20 @@ var vmailhead='<tr>'+
 
 for(var i=0;i<datasize;i++) datelabels[i]=''
 
-function getTempData() {
+function getOutSideTempData() {
     var xhttp=new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
 	if (xhttp.readyState == 4 && xhttp.status == 200) {
 	    var data=JSON.parse(xhttp.responseText)
 
 	    if (data.temperatures) {
-		draw(data.temperatures)
+		drawOutside(data.temperatures)
 		if (firstload==0) {
-			setTimeout(getTempData,60000)
+			setTimeout(getOutSideTempData,60000)
 		} else {
 			firstload=0
 			var secstoNextMinute=(60- (new Date().getSeconds()) +5)*1000
-			setTimeout(getTempData,secstoNextMinute)
+			setTimeout(getOutSideTempData,secstoNextMinute)
 		}
 	    }
 	}
@@ -77,8 +83,32 @@ function getTempData() {
     xhttp.send();
 }
 
-function createChart() {
+function getInSideTempData() {
+    var xhttp=new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+	if (xhttp.readyState == 4 && xhttp.status == 200) {
+	    var data=JSON.parse(xhttp.responseText)
+
+	    if (data.temperatures) {
+		drawInside(data.temperatures)
+		if (firstload==0) {
+			setTimeout(getInSideTempData,60000)
+		} else {
+			firstload=0
+			var secstoNextMinute=(60- (new Date().getSeconds()) +5)*1000
+			setTimeout(getInSideTempData,secstoNextMinute)
+		}
+	    }
+	}
+    };
+    var URL="http://pizza.goldfarbs.net/cgi-bin/tempdata_inside.cgi?DataSize="+datasize
+    xhttp.open("GET", URL, true);
+    xhttp.send();
+}
+
+function createCharts() {
     var gutterLeft = 40, gutterRight = 40, gutterTop   = 100, gutterBottom = 75;
+    var outside_ymax=110, outside_ymin=40, inside_ymax=80, inside_ymin=65;
 
     // This is used to initialize the charts (ie. tell them how many points to expect)
     var data= new Array(datasize);
@@ -96,8 +126,8 @@ function createChart() {
 	    gutterLeft: gutterLeft,
 	    gutterTop: gutterTop,
 	    gutterBottom: gutterBottom,
-	    ymax: 110,
-	    ymin: 40,
+	    ymax: outside_ymax,
+	    ymin: outside_ymin,
 	    ylabelsCount: 7,
 	    numyticks:7,
 	    outofbounds: true,
@@ -128,8 +158,8 @@ function createChart() {
 	    gutterLeft: gutterLeft,
 	    gutterTop: gutterTop,
 	    gutterBottom: gutterBottom,
-	    ymax: 110,
-	    ymin: 40,
+	    ymax: outside_ymax,
+	    ymin: outside_ymin,
 	    outofbounds: true,
 	    backgroundGrid: false,
 	    colors: [ 'green' ],
@@ -149,8 +179,8 @@ function createChart() {
 	    gutterLeft: gutterLeft,
 	    gutterTop: gutterTop,
 	    gutterBottom: gutterBottom,
-	    ymax: 110,
-	    ymin: 40,
+	    ymax: outside_ymax,
+	    ymin: outside_ymin,
 	    outofbounds: true,
 	    backgroundGrid: false,
 	    colors: [ 'blue' ],
@@ -265,10 +295,149 @@ function createChart() {
         }
     }).draw()
 
+
+
+
+    // Make and draw the background charts
+    hall_line = new RGraph.Line({
+	id: 'cvs_inside_bedrooms',
+	data: data,
+	options: {
+
+	    title: "Temperatures\n",
+	    titleBold: true,
+	    titleSize: 12,
+	    gutterRight: gutterRight,
+	    gutterLeft: gutterLeft,
+	    gutterTop: gutterTop,
+	    gutterBottom: gutterBottom,
+	    ymax: inside_ymax,
+	    ymin: inside_ymin,
+	    ylabelsCount: 7,
+	    numyticks:7,
+	    outofbounds: true,
+	    backgroundGridAutofit: true,
+	    backgroundGridAutofitNumvlines: 10,
+	    backgroundGridAutofitNumhlines: 6,
+//	    backgroundGridVlines: false,
+	    backgroundGridBorder: false,
+	    colors: [ 'Red','Green','Blue', 'Purple', 'Orange' ],
+	    key: ['Hall Temp', 'Nikita Temp', 'Daniel Temp', 'Alex Temp', 'Guest Temp' ],
+	    keyPosition: 'gutter',
+	    numxticks: 10,
+	    tickmarks: null,
+	    labels: labels,
+//	    noaxes: true,
+	    textSize: 12,
+	    textAngle: 45,
+	    textColor: '#aaa',
+	    scaleZerostart: true
+	}
+    }).draw();
+
+    nikita_line = new RGraph.Line({
+	id: 'cvs_inside_bedrooms',
+	data: data,
+	options: {
+	    gutterRight: gutterRight,
+	    gutterLeft: gutterLeft,
+	    gutterTop: gutterTop,
+	    gutterBottom: gutterBottom,
+	    ymax: inside_ymax,
+	    ymin: inside_ymin,
+	    outofbounds: true,
+	    backgroundGrid: false,
+	    colors: [ 'green' ],
+	    numxticks: 10,
+	    tickmarks: null,
+	    noaxes: true,
+	    textColor: '#aaa',
+	    ylabels: false,
+	    scaleZerostart: true
+	}
+    }).draw();
+  
+  daniel_line = new RGraph.Line({
+	id: 'cvs_inside_bedrooms',
+	data: data,
+	options: {
+	    gutterRight: gutterRight,
+	    gutterLeft: gutterLeft,
+	    gutterTop: gutterTop,
+	    gutterBottom: gutterBottom,
+	    ymax: inside_ymax,
+	    ymin: inside_ymin,
+	    outofbounds: true,
+	    backgroundGrid: false,
+	    colors: [ 'blue' ],
+	    numxticks: 10,
+	    tickmarks: null,
+	    noaxes: true,
+	    textColor: '#aaa',
+	    ylabels: false,
+	    scaleZerostart: true
+	}
+    }).draw();
+
+  alexander_line = new RGraph.Line({
+	id: 'cvs_inside_bedrooms',
+	data: data,
+	options: {
+	    gutterRight: gutterRight,
+	    gutterLeft: gutterLeft,
+	    gutterTop: gutterTop,
+	    gutterBottom: gutterBottom,
+	    ymax: inside_ymax,
+	    ymin: inside_ymin,
+	    outofbounds: true,
+	    backgroundGrid: false,
+	    colors: [ 'purple' ],
+	    numxticks: 10,
+	    tickmarks: null,
+	    noaxes: true,
+	    textColor: '#aaa',
+	    ylabels: false,
+	    scaleZerostart: true
+	}
+    }).draw();
+
+  guest_line = new RGraph.Line({
+	id: 'cvs_inside_bedrooms',
+	data: data,
+	options: {
+	    gutterRight: gutterRight,
+	    gutterLeft: gutterLeft,
+	    gutterTop: gutterTop,
+	    gutterBottom: gutterBottom,
+	    ymax: inside_ymax,
+	    ymin: inside_ymin,
+	    outofbounds: true,
+	    backgroundGrid: false,
+	    colors: [ 'orange' ],
+	    numxticks: 10,
+	    tickmarks: null,
+	    noaxes: true,
+	    textColor: '#aaa',
+	    ylabels: false,
+	    scaleZerostart: true
+	}
+    }).draw();
+
+    tempdateaxis_inside = new RGraph.Drawing.XAxis({
+	id: 'cvs_inside_bedrooms',
+	y: pooltemp_line.canvas.height - 25,
+	options: {
+	     labels: datelabels,
+	     noxaxis: true,	
+	     hmargin: 10,
+	}
+    }).draw()
+
+
     updateDate()
     updateAutomation()
-    getTempData()
-
+    getOutSideTempData()
+    getInSideTempData()
 }
 function updateAutomation() {
 	automation("GET_SETTINGS")
@@ -287,8 +456,8 @@ function updateDate() {
 	setTimeout(updateDate,1000)
 }
 
-// draw() - Draws in the new information on graph
-function draw (temperatures) {
+// drawOutside() - Draws in the new information on graph
+function drawOutside(temperatures) {
 	// Reset the canvas
 	RGraph.clear(humidity_line.canvas);
 	RGraph.clear(patiotemp_line.canvas);
@@ -344,9 +513,57 @@ function draw (temperatures) {
 	humiditydateaxis.draw();
 	filterPressure_dateaxis.draw();
 	
-	
-	// Update the counter
 }
+
+// drawInside() - Draws in the new information on graph
+function drawInside(temperatures) {
+	// Reset the canvas
+	RGraph.clear(hall_line.canvas);
+	RGraph.clear(nikita_line.canvas);
+	RGraph.clear(daniel_line.canvas);
+	RGraph.clear(alexander_line.canvas);
+	RGraph.clear(guest_line.canvas);
+
+	// lasttemp is the index of the last entry that will have data
+	var lasttemp=temperatures.length-2
+
+	/**
+	* Create the Label Array
+	*/
+	for(var i=0;i<=lasttemp;i++) {
+		var dt=temperatures[i].timestamp.split(" ")
+		var t=dt[1].split(":")
+		if (t[1]=='00' || t[1]=='30') {
+			labels[i]=t[0]+":"+t[1]
+		} else {
+			labels[i]=''
+		}
+		if (t[0] == '12' && t[1]=='00') {
+			datelabels[i]=dt[0]
+		} else if (t[0] == '00' && t[1]=='00') {
+			datelabels[i]='|'
+		} else {
+			datelabels[i]=''
+		}
+		
+		hall_line.original_data[0][i]=temperatures[i].d.UpstairsHall
+		nikita_line.original_data[0][i]=temperatures[i].d.NikitaBedroom
+		daniel_line.original_data[0][i]=temperatures[i].d.DanielBedroom
+		alexander_line.original_data[0][i]=temperatures[i].d.AlexanderBedroom
+		guest_line.original_data[0][i]=temperatures[i].d.GuestBedroom
+	}
+	
+	document.getElementById("updateTimeInside").innerHTML=temperatures[lasttemp].timestamp.split(" ")[1]
+	
+	hall_line.draw();
+	nikita_line.draw();
+	daniel_line.draw();
+	alexander_line.draw();
+	guest_line.draw();
+	tempdateaxis_inside.draw();
+}
+	
+
 function automation(action) {
     var xhttp=new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
@@ -447,7 +664,7 @@ function automation(action) {
 }
 </script>
 </head>
-<body onLoad="createChart()">
+<body onLoad="createCharts()">
 
 <div class="container">
   <div class="scroller scroller-left"><i class="glyphicon glyphicon-chevron-left" style="font-size:300%;"></i></div>
@@ -457,10 +674,12 @@ function automation(action) {
     <li ><h1 style="font-size: 250%;" id="clock"></h1></li>
     <li ><h1 >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</h1></li>
     <li style="font-size: 300%;" class="active"><a data-toggle="pill" href="#home">&nbsp;Temps&nbsp;</a></li>
+    <li style="font-size: 300%;"><a data-toggle="pill" href="#InsideTemps">Inside</a></li>
     <li style="font-size: 300%;"><a data-toggle="pill" href="#PoolMenu">Pool</a></li>
     <li style="font-size: 300%;"><a data-toggle="pill" href="#HouseMenu">House</a></li>
     <li style="font-size: 300%;"><a data-toggle="pill" href="#SpaMenu">Spa</a></li>
     <li style="font-size: 300%;"><a data-toggle="pill" href="#VmailMenu">Vmail</a></li>
+    <li style="font-size: 300%;"><a data-toggle="pill" href="#CalMenu">Calendar</a></li>
 
   </ul>
   </div>
@@ -508,6 +727,19 @@ function automation(action) {
         </div>
         <div class="col-sm-2">
           <a href="http://pizza.goldfarbs.net/cgi-bin/house1.cgi?DataSize=10080" class="btn btn-info btn-lg" role="button" style="width:100px">1 Week</a>
+        </div>
+      </div>
+    </div>
+    <div id="InsideTemps" class="tab-pane fade in active">
+      <hr style="height:12px;border:0;box-shadow: inset 0 12px 12px -12px rgba(0, 0, 0, 0.5);"/>
+      <div class="row">
+        <div class="col-md-2">
+           <span id="updateTimeInside">00:00:00</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <canvas id="cvs_inside_bedrooms" width="800" height="400">[No canvas support]</canvas>
         </div>
       </div>
     </div>
@@ -640,12 +872,19 @@ function automation(action) {
     </div>
     <div id="VmailMenu" class="tab-pane fade">
       <hr style="height:12px;border:0;box-shadow: inset 0 12px 12px -12px rgba(0, 0, 0, 0.5);"/>
-
-<!--        <iframe src="http://pizza.goldfarbs.net/cgi-bin/vmail.cgi?action=login&mailbox=2201&password=7765" width="100%" height="1000px" style="border:none;"></iframe> -->
       <div class="row clearfix">
         <div class="col-md-12 column">
           <table class="table table-bordered table-hover" id="vmail_table">
           </table>
+        </div>
+      </div>
+      <hr style="border:0;height:1px;background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));"/>
+    </div>
+    <div id="CalMenu" class="tab-pane fade">
+      <hr style="height:12px;border:0;box-shadow: inset 0 12px 12px -12px rgba(0, 0, 0, 0.5);"/>
+      <div class="row clearfix">
+        <div class="col-md-12 column">
+          <div id='calendar'></div>
         </div>
       </div>
       <hr style="border:0;height:1px;background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));"/>
@@ -741,6 +980,20 @@ document.getElementById("clock").addEventListener('click',function() {
 },false);
 
 \$('body').css('zoom', '110%');
+
+\$('#calendar').fullCalendar({
+    // options and callbacks
+    header: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'month,basicWeek,basicDay'
+    },
+    defaultDate: '$(date +%Y-%m-%d)',
+    editable: true,
+    eventLimit: true, // allow "more" link when too many events
+    events: 'http://pizza.goldfarbs.net/cgi-bin/caldata.cgi'
+});
+
 </script>
 </body>
 </html>
