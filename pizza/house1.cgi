@@ -579,13 +579,11 @@ function sprinkerTimerSet() {
 }
 
 function sprinklerCtrl(zone) {
-    console.log("SprinklerState="+SprinklerState+"   SprinklerZone="+SprinklerZone+"   newzone="+zone)
     if (SprinklerState == "OFF" || SprinklerZone != zone) {
 
         if (SprinklerState=="OFF") {
             //Turn the sprinklers on which will advance the current zone
             automation('SPRINKLERS_ON')
-console.log("Sprinklers turned on: SprinklerZone="+SprinklerZone+"    zone="+zone)
             SprinklerTimer=0
             clearTimeout(SprinklerTimerObj)
             setTimeout(function() {sprinklerCtrl(zone)},15000)
@@ -593,7 +591,6 @@ console.log("Sprinklers turned on: SprinklerZone="+SprinklerZone+"    zone="+zon
         } else {
             // Turn the sprinklers off
             automation('SPRINKLERS_OFF')
-console.log("Sprinklers turned off: SprinklerZone="+SprinklerZone+"    zone="+zone)
             SprinklerTimer=0
             clearTimeout(SprinklerTimerObj)
             setTimeout(function() {sprinklerCtrl(zone)},15000)
@@ -655,7 +652,6 @@ function automation(action) {
             var sprinklers=xmldata.getElementsByTagName("sprinklers")
             SprinklerZone=sprinklers[0].getAttribute('zone')
             SprinklerState=sprinklers[0].getAttribute('state')
-console.log("automation: Setting SprinklerZone="+SprinklerZone+"    SprinklerState="+SprinklerState)
             if (SprinklerState == "OFF" ) {
                 document.getElementById("sprinklerStateText").innerHTML="Sprinklers Off"
                 var imagesrc="/sprinklers/sprinkler_off.png"
