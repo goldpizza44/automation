@@ -10,7 +10,7 @@
 #
 
 
-export DataSize=600
+export DataSize=720
 
 IFS='&'
 for i in $QUERY_STRING
@@ -29,12 +29,15 @@ Content-Type: text/html
   xml:lang="en-US">
 <head>
     <link rel="stylesheet" href="http://pizza.goldfarbs.net/bootstrap/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="http://pizza.goldfarbs.net/bootstrap/css/bootstrap-slider.min.css"/>
     <link rel="stylesheet" href="http://pizza.goldfarbs.net/bootstrap/css/horiz_tabscroll.css"/>
     <link rel="stylesheet" href="http://pizza.goldfarbs.net/fullcalendar/fullcalendar.css"/>
     <link rel="stylesheet" href="http://pizza.goldfarbs.net/fullcalendar/fullcalendar.print.css" media="print" />
 
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
     <script type="text/javascript" src="http://pizza.goldfarbs.net/bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="http://pizza.goldfarbs.net/bootstrap/js/bootstrap-slider.min.js"></script>
+    <script type="text/javascript" src="http://pizza.goldfarbs.net/bootstrap/js/modernizr.js"></script>
     <script type="text/javascript" src="http://pizza.goldfarbs.net/fullcalendar/lib/moment.min.js"></script>
     <script type="text/javascript" src="http://pizza.goldfarbs.net/fullcalendar/fullcalendar.js"></script>
     <script type="text/javascript" src="http://pizza.goldfarbs.net/RGraph/libraries/RGraph.common.core.js" ></script>
@@ -44,6 +47,12 @@ Content-Type: text/html
     <title>Goldfarb Temperatures</title>
 
 <script type="text/javascript">
+var DimmerTimer;
+var SprinklerZone;
+var SprinklerState;
+var SprinklerTimer;
+var SprinklerTimerObj;
+
 var datasize=${DataSize}
 var humidity_line, patiotemp_line, pumptemp_line, pooltemp_line,dateaxis;
 var nikita_line,daniel_line,alexander_line,guest_line,hall_line;
@@ -90,7 +99,8 @@ function getInSideTempData() {
 	    var data=JSON.parse(xhttp.responseText)
 
 	    if (data.temperatures) {
-		drawInside(data.temperatures)
+                // There is a change the odriod is down and we dont get data
+                if (data.temperatures.length > 1) drawInside(data.temperatures)
 		if (firstload==0) {
 			setTimeout(getInSideTempData,60000)
 		} else {
@@ -108,7 +118,7 @@ function getInSideTempData() {
 
 function createCharts() {
     var gutterLeft = 40, gutterRight = 40, gutterTop   = 100, gutterBottom = 75;
-    var outside_ymax=110, outside_ymin=40, inside_ymax=80, inside_ymin=65;
+    var outside_ymax=110, outside_ymin=40, inside_ymax=80, inside_ymin=66;
 
     // This is used to initialize the charts (ie. tell them how many points to expect)
     var data= new Array(datasize);
@@ -318,7 +328,7 @@ function createCharts() {
 	    outofbounds: true,
 	    backgroundGridAutofit: true,
 	    backgroundGridAutofitNumvlines: 10,
-	    backgroundGridAutofitNumhlines: 6,
+	    backgroundGridAutofitNumhlines: 14,
 //	    backgroundGridVlines: false,
 	    backgroundGridBorder: false,
 	    colors: [ 'Red','Green','Blue', 'Purple', 'Orange' ],
@@ -562,7 +572,39 @@ function drawInside(temperatures) {
 	guest_line.draw();
 	tempdateaxis_inside.draw();
 }
-	
+function sprinkerTimerSet() {
+    SprinklerTimer++;
+    document.getElementById("sprinklerTimer").innerHTML=SprinklerTimer
+    SprinklerTimerObj=setTimeout(sprinkerTimerSet,1000)
+}
+
+function sprinklerCtrl(zone) {
+    console.log("SprinklerState="+SprinklerState+"   SprinklerZone="+SprinklerZone+"   newzone="+zone)
+    if (SprinklerState == "OFF" || SprinklerZone != zone) {
+
+        if (SprinklerState=="OFF") {
+            //Turn the sprinklers on which will advance the current zone
+            automation('SPRINKLERS_ON')
+console.log("Sprinklers turned on: SprinklerZone="+SprinklerZone+"    zone="+zone)
+            SprinklerTimer=0
+            clearTimeout(SprinklerTimerObj)
+            setTimeout(function() {sprinklerCtrl(zone)},15000)
+            SprinklerTimerObj=setTimeout(sprinkerTimerSet,1000)
+        } else {
+            // Turn the sprinklers off
+            automation('SPRINKLERS_OFF')
+console.log("Sprinklers turned off: SprinklerZone="+SprinklerZone+"    zone="+zone)
+            SprinklerTimer=0
+            clearTimeout(SprinklerTimerObj)
+            setTimeout(function() {sprinklerCtrl(zone)},15000)
+            SprinklerTimerObj=setTimeout(sprinkerTimerSet,1000)
+        }
+    } else {
+        document.getElementById("sprinklerTimer").innerHTML=""
+	clearTimeout(SprinklerTimerObj)
+    }
+}
+
 
 function automation(action) {
     var xhttp=new XMLHttpRequest();
@@ -610,6 +652,23 @@ function automation(action) {
                     }
                 }
             }
+            var sprinklers=xmldata.getElementsByTagName("sprinklers")
+            SprinklerZone=sprinklers[0].getAttribute('zone')
+            SprinklerState=sprinklers[0].getAttribute('state')
+console.log("automation: Setting SprinklerZone="+SprinklerZone+"    SprinklerState="+SprinklerState)
+            if (SprinklerState == "OFF" ) {
+                document.getElementById("sprinklerStateText").innerHTML="Sprinklers Off"
+                var imagesrc="/sprinklers/sprinkler_off.png"
+            } else if (SprinklerState == "ON" ) {
+                document.getElementById("sprinklerStateText").innerHTML="Zone "+SprinklerZone+" On"
+                var imagesrc="/sprinklers/sprinkler_zone"+sprinklers[0].getAttribute('zone')+".png"
+            }
+            var zone_image=document.getElementById('sprinklerState');
+            zone_image.src=imagesrc
+
+            document.getElementById("exteriorOnTime").innerHTML="Lights on at "+xmldata.getElementsByTagName("lightson")[0].getAttribute('time')+" PM"
+
+
             var vmail=xmldata.getElementsByTagName("vmail")
 	    \$('#vmail_table').empty();
             \$('#vmail_table').append(vmailhead)
@@ -717,13 +776,13 @@ function automation(action) {
           <a href="http://pizza.goldfarbs.net/cgi-bin/house1.cgi?DataSize=360"   class="btn btn-info btn-lg" role="button" style="width:100px">6 Hours</a>
         </div>
         <div class="col-sm-2">
+          <a href="http://pizza.goldfarbs.net/cgi-bin/house1.cgi?DataSize=720"  class="btn btn-info btn-lg" role="button" style="width:100px">12 Hours</a>
+        </div>
+        <div class="col-sm-2">
           <a href="http://pizza.goldfarbs.net/cgi-bin/house1.cgi?DataSize=1440"  class="btn btn-info btn-lg" role="button" style="width:100px">24 Hours</a>
         </div>
         <div class="col-sm-2">
           <a href="http://pizza.goldfarbs.net/cgi-bin/house1.cgi?DataSize=2880"  class="btn btn-info btn-lg" role="button" style="width:100px">2 Days</a>
-        </div>
-        <div class="col-sm-2">
-          <a href="http://pizza.goldfarbs.net/cgi-bin/house1.cgi?DataSize=5760"  class="btn btn-info btn-lg" role="button" style="width:100px">4 Days</a>
         </div>
         <div class="col-sm-2">
           <a href="http://pizza.goldfarbs.net/cgi-bin/house1.cgi?DataSize=10080" class="btn btn-info btn-lg" role="button" style="width:100px">1 Week</a>
@@ -828,41 +887,105 @@ function automation(action) {
       <h3>Exterior Lights</h3>
 
       <div class="row">
-        <div class="col-sm-2"><span style="font-size: 150%">Front:</span></div>
+        <div class="col-sm-2"><span style="font-size: 150%">Front:</span><br><span id="exteriorOnTime">&nbsp;</span></div>
         <div class="col-sm-2"><button id="EXTERIOR_FRONT_ON"  onclick="automation('EXTERIOR_FRONT_ON')"  type="button" class="btn btn-info btn-lg">ON</button></div>
         <div class="col-sm-2"><button id="EXTERIOR_FRONT_OFF" onclick="automation('EXTERIOR_FRONT_OFF')" type="button" class="btn btn-info btn-lg">OFF</button></div>
       </div>
 
       <div class="row">
-        <div class="col-sm-2"><span style="font-size: 150%">Rear:</span></div>
+        <div class="col-sm-2"><span style="font-size: 150%">Rear:</span><br>&nbsp;</div>
         <div class="col-sm-2"><button id="EXTERIOR_REAR_ON"    onclick="automation('EXTERIOR_REAR_ON')"    type="button" class="btn btn-info btn-lg">ON</button></div>
         <div class="col-sm-2"><button id="EXTERIOR_REAR_OFF"   onclick="automation('EXTERIOR_REAR_OFF')"   type="button" class="btn btn-info btn-lg">OFF</button></div>
       </div>
 
       <div class="row">
-        <div class="col-sm-2"><span style="font-size: 150%">Northeast:</span></div>
+        <div class="col-sm-2"><span style="font-size: 150%">Northeast:</span><br>&nbsp;</div>
         <div class="col-sm-2"><button id="EXTERIOR_NE_ON"    onclick="automation('EXTERIOR_NE_ON')"    type="button" class="btn btn-info btn-lg">ON</button></div>
         <div class="col-sm-2"><button id="EXTERIOR_NE_OFF"   onclick="automation('EXTERIOR_NE_OFF')"   type="button" class="btn btn-info btn-lg">OFF</button></div>
       </div>
 
       <div class="row">
-        <div class="col-sm-2"><span style="font-size: 150%">Courtyard:</span></div>
+        <div class="col-sm-2"><span style="font-size: 150%">Courtyard:</span><br>&nbsp;</div>
         <div class="col-sm-2"><button id="COURTYARD_ON"    onclick="automation('COURTYARD_ON')"    type="button" class="btn btn-info btn-lg">ON</button></div>
         <div class="col-sm-2"><button id="COURTYARD_OFF"   onclick="automation('COURTYARD_OFF')"   type="button" class="btn btn-info btn-lg">OFF</button></div>
       </div>
 
+      <div class="row">
+        <hr style="border:0;height:1px;background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));"/>
+
+
+        <div class="col-sm-6">
+          <div class="row">
+            <div class="col-sm-4"><span style="font-size: 150%">Sprinklers:</span></div>
+            <div class="col-sm-4"><button id="SPRINKLERS_ON"    onclick="automation('SPRINKLERS_ON')"    type="button" class="btn btn-info btn-lg">ON</button></div>
+            <div class="col-sm-4"><button id="SPRINKLERS_OFF"   onclick="automation('SPRINKLERS_OFF')"   type="button" class="btn btn-info btn-lg">OFF</button></div>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="col-md-12">
+	    <table border=0><TR valign=center>
+            <TD>
+               <img id="sprinklerState" src="http://pizza.goldfarbs.net/sprinklers/sprinkler_small.png" usemap="#sprinklerMap">
+            </TD>
+
+            <TD align=center>
+               <H2 id="sprinklerStateText">Sprinklers Off</H2><br>
+               <span id="sprinklerTimer"> </span>
+            </TD>
+            </table>
+<map id="sprinklerMap" name="sprinklerMap">
+   <area shape="poly" alt="" title="" coords="52,124,126,115,128,85,135,86,138,66,126,63,125,51,102,49" onclick="sprinklerCtrl(1)" href='#' />
+   <area shape="poly" alt="" title="" coords="98,160,138,122,139,90,142,74,187,130,145,154,134,154" onclick="sprinklerCtrl(2)" href='#' />
+   <area shape="poly" alt="" title="" coords="82,37,101,10,126,39,127,49,94,44,94,44" onclick="sprinklerCtrl(3)" href='#' />
+   <area shape="poly" alt="" title="" coords="90,127,84,151,6,157,5,136,15,113,38,126,38,126" onclick="sprinklerCtrl(4)" href='#' />
+   <area shape="poly" alt="" title="" coords="21,108,57,17,38,117" onclick="sprinklerCtrl(5)" target="" href='#' />
+<!-- Created by Online Image Map Editor (http://wwwmaschek.hu/imagemap/index) -->
+</map>
+
+          </div>
+        </div>
+      </div>
+      <hr style="border:0;height:1px;background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));"/>
+      <div class="row">
+        <div class="row">
+          <div class="col-sm-4"><span style="font-size: 150%">Garage Door:</span></div>
+          <div class="col-sm-4"><span style="font-size: 150%" id="garage_door">unknown</span></div>
+        </div>
+      </div>
       <hr style="border:0;height:1px;background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));"/>
 
       <div class="row">
-        <div class="col-sm-2"><span style="font-size: 150%">Sprinklers:</span></div>
-        <div class="col-sm-2"><button id="SPRINKLERS_ON"    onclick="automation('SPRINKLERS_ON')"    type="button" class="btn btn-info btn-lg">ON</button></div>
-        <div class="col-sm-2"><button id="SPRINKLERS_OFF"   onclick="automation('SPRINKLERS_OFF')"   type="button" class="btn btn-info btn-lg">OFF</button></div>
+        <div class="col-sm-2"><span style="font-size: 150%">Pond Pump:</span></div>
+        <div class="col-sm-2"><button id="PONDPUMP_ON"    onclick="automation('PONDPUMP_ON')"    type="button" class="btn btn-info btn-lg">ON</button></div>
+        <div class="col-sm-2"><button id="PONDPUMP_OFF"   onclick="automation('PONDPUMP_OFF')"   type="button" class="btn btn-info btn-lg">OFF</button></div>
       </div>
+      <div class="row">
+        <div class="col-sm-2"><span style="font-size: 150%">Pond Lights:</span></div>
+        <div class="col-sm-2"><button id="PONDLIGHTS_ON"    onclick="automation('PONDLIGHTS_ON')"    type="button" class="btn btn-info btn-lg">ON</button></div>
+        <div class="col-sm-2"><button id="PONDLIGHTS_OFF"   onclick="automation('PONDLIGHTS_OFF')"   type="button" class="btn btn-info btn-lg">OFF</button></div>
+      </div>
+      <hr style="border:0;height:1px;background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));"/>
+      <h3>Interior Lights</h3>
 
       <div class="row">
-        <div class="col-sm-2"><span style="font-size: 150%">Garage Door:</span></div>
-        <div class="col-sm-2"><span style="font-size: 150%" id="garage_door">unknown</span></div>
+        <div class="col-sm-2"><span style="font-size: 150%">David Lamp:</span></div>
+        <div class="col-sm-2"><button id="DAVIDLAMP_ON"    onclick="automation('DAVIDLAMP_ON')"    type="button" class="btn btn-info btn-lg">ON</button></div>
+        <div class="col-sm-2"><button id="DAVIDLAMP_OFF"   onclick="automation('DAVIDLAMP_OFF')"   type="button" class="btn btn-info btn-lg">OFF</button></div>
+        <div class="col-sm-2"><button id="DAVIDLAMP_25PCT"   onclick="automation('DAVIDLAMP_DIM&dimlevel=17')"   type="button" class="btn btn-info btn-lg">25</button></div>
+        <div class="col-sm-2"><button id="DAVIDLAMP_50PCT"   onclick="automation('DAVIDLAMP_DIM&dimlevel=14')"   type="button" class="btn btn-info btn-lg">50</button></div>
+        <div class="col-sm-2"><button id="DAVIDLAMP_75PCT"   onclick="automation('DAVIDLAMP_DIM&dimlevel=12')"   type="button" class="btn btn-info btn-lg">75</button></div>
+
+<!--        <div class="col-sm-6">Dim&nbsp;&nbsp;&nbsp; <input id="DAVIDLAMP_SLIDER"  data-slider-id="DAVIDLAMPSLIDER" type="text" data-slider-min="0" data-slider-max="10" data-slider-step="1" data-slider-value="0"> &nbsp;&nbsp;Bright</div> -->
+
       </div>
+<!--
+      <div class="row">
+        <div class="col-sm-2"><span style="font-size: 150%">Theatre Lamp:</span></div>
+        <div class="col-sm-2"><button id="THEATRELAMP_ON"    onclick="automation('THEATRELAMP_ON')"    type="button" class="btn btn-info btn-lg">ON</button></div>
+        <div class="col-sm-2"><button id="THEATRELAMP_OFF"   onclick="automation('THEATRELAMP_OFF')"   type="button" class="btn btn-info btn-lg">OFF</button></div>
+        <div class="col-sm-6">Dim&nbsp;&nbsp;&nbsp; <input id="THEATRELAMP_SLIDER"  data-slider-id="THEATRELAMPSLIDER" type="text" data-slider-min="0" data-slider-max="10" data-slider-step="1" data-slider-value="0"> &nbsp;&nbsp;Bright</div>
+      </div>
+-->
     </div>
     <div id="SpaMenu" class="tab-pane fade">
       <hr style="height:12px;border:0;box-shadow: inset 0 12px 12px -12px rgba(0, 0, 0, 0.5);"/>
@@ -993,6 +1116,31 @@ document.getElementById("clock").addEventListener('click',function() {
     eventLimit: true, // allow "more" link when too many events
     events: 'http://pizza.goldfarbs.net/cgi-bin/caldata.cgi'
 });
+
+
+//
+//\$('#THEATRELAMP_SLIDER').slider({
+//    formatter: function(value) {
+//	// Only send if there is a half second pause
+//	if (value == 0) return
+//	var dimvalue=20-value
+//        clearTimeout(DimmerTimer);
+//        DimmerTimer=setTimeout(function() {automation('THEATRELAMP_DIM&dimlevel='+dimvalue.toString())},1000)
+//
+//        return 'Current value: ' + value;
+//    }
+//});
+//\$('#DAVIDLAMP_SLIDER').slider({
+//    formatter: function(value) {
+//	// Only send if there is a half second pause
+//	if (value == 0) return
+//	var dimvalue=20-value
+//        clearTimeout(DimmerTimer);
+//        DimmerTimer=setTimeout(function() {automation('DAVIDLAMP_DIM&dimlevel='+dimvalue.toString())},1000)
+//
+//        return 'Current value: ' + value;
+//    }
+//});
 
 </script>
 </body>

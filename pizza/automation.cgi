@@ -54,12 +54,40 @@ EXTERIOR_NE_ON)     heyu on  exterior_ne 2>&1;;
 EXTERIOR_NE_OFF)    heyu off exterior_ne 2>&1;;
 EXTERIOR_REAR_ON)   heyu on  exterior_rear 2>&1;;
 EXTERIOR_REAR_OFF)  heyu off exterior_rear 2>&1;;
-SPRINKLERS_ON)      heyu on  sprinklers 2>&1;;
-SPRINKLERS_OFF)     heyu off sprinklers 2>&1;;
+SPRINKLERS_ON)      CURRENT_ZONE=$(cat /usr/local/etc/heyu/current_sprinkler_zone|gawk '{print $1}');
+			let CURRENT_ZONE=CURRENT_ZONE+1                    				
+			(( CURRENT_ZONE > 5 )) && CURRENT_ZONE=1
+			heyu on  sprinklers 2>&1
+			echo "$CURRENT_ZONE	ON" > /usr/local/etc/heyu/current_sprinkler_zone
+                        echo "<sprinklers zone='$CURRENT_ZONE' state='ON'/>"
+			;;
+SPRINKLERS_OFF)     CURRENT_ZONE=$(cat /usr/local/etc/heyu/current_sprinkler_zone|gawk '{print $1}');
+			heyu off sprinklers 2>&1
+			echo "$CURRENT_ZONE	OFF" > /usr/local/etc/heyu/current_sprinkler_zone
+                        echo "<sprinklers zone='$CURRENT_ZONE' state='OFF'/>"
+			;;
+SPRINKLER_ZONE)     CURRENT_ZONE=$(cat /usr/local/etc/heyu/current_sprinkler_zone|gawk '{print $1}');
+			while (( CURRENT_ZONE != NEW_ZONE ))
+			do
+				heyu on sprinklers 2>&1;sleep 10;heyu off sprinklers 2>&1;sleep 10
+				let CURRENT_ZONE=CURRENT_ZONE+1
+				(( CURRENT_ZONE > 5 )) && CURRENT_ZONE=1
+			done
+			echo "$CURRENT_ZONE	ON" > /usr/local/etc/heyu/current_sprinkler_zone
+			heyu on sprinklers 2>&1;
+			;;
 COURTYARD_ON)       heyu on  courtyard 2>&1;;
 COURTYARD_OFF)      heyu off courtyard 2>&1;;
-
-
+PONDPUMP_ON)        heyu on  pond_pump 2>&1;;
+PONDPUMP_OFF)       heyu off pond_pump 2>&1;;
+PONDLIGHTS_ON)      heyu on  pond_lights 2>&1;;
+PONDLIGHTS_OFF)     heyu off pond_lights 2>&1;;
+DAVIDLAMP_ON)       heyu on  david_lamp 2>&1;;
+DAVIDLAMP_OFF)      heyu off david_lamp 2>&1;;
+DAVIDLAMP_DIM)      heyu dimb david_lamp $dimlevel 2>&1;;
+THEATRELAMP_ON)     heyu on  theatre_lamp 2>&1;;
+THEATRELAMP_OFF)    heyu off theatre_lamp 2>&1;;
+THEATRELAMP_DIM)    heyu dimb theatre_lamp $dimlevel 2>&1;;
 
 POOL_LIGHT_ON)		POOLSETTING='{"poolSetting":{"PoolLight":"on"}}'		;;
 POOL_LIGHT_OFF)		POOLSETTING='{"poolSetting":{"PoolLight":"off"}}'		;;
@@ -107,6 +135,13 @@ END {printf("</X10settings>\n") }'
 
 	# Get the voicemails as well.
 	/usr/local/bin/asterisk_vmail
+	cat /usr/local/etc/heyu/current_sprinkler_zone|gawk '{printf("<sprinklers zone=\"%s\" state=\"%s\"/>\n",$1,$2)}'
+	/usr/local/bin/sunwait -p  26.251996N 80.259874W|gawk '
+/Civil twilight starts/ {
+	split($(NF-1),a,"");
+	t=sprintf("1970 01 01 %d%d %d%d 00",a[1],a[2],a[3],a[4]);
+	printf("<lightson time=\"%s\"/>\n",strftime("%H:%M",mktime(t)-900))
+}'
 ;;
 DELETE_VMAIL)	/usr/local/bin/asterisk_vmail -m $mbox -M $msgnum -a DELETE;;
 
