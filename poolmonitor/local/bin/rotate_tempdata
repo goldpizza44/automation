@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# The idea of this program is to leave only the last 10080 lines (1 week of data) in tempdata.csv
+# and move other lines into a save file.  When this program runs at midnight on Sundays there should be
+# 2 weeks of data (or more).  "systemctl restart tempmonitor" should be run after to make sure the collection
+# program writes to the new file.
+ 
+DATE=$(date '+%Y%m%d')
+date '+%Y/%m/%d %H:%M:%S'
+SAVEFILE=/var/www/html/tempdata.csv.${DATE}
+cp /var/www/html/tempdata.csv $SAVEFILE
+if [[ $1 == TEST ]] 
+then
+	DESTFILE=/var/www/html/tempdata.csv.test
+	cp /var/www/html/tempdata.csv $DESTFILE
+else 
+	DESTFILE=/var/www/html/tempdata.csv
+fi
+
+cat $DESTFILE | sum
+
+LINES=$(wc -l <  $SAVEFILE )
+S10080=$(echo $LINES | gawk '{print $1-10080}')
+S10079=$(echo $LINES | gawk '{print $1-10079}') 
+echo $LINES $S10079 $S10080
+
+sed -i "${S10079},\$d" $SAVEFILE
+sed -i "1,${S10080}d" $DESTFILE
+
+cat $SAVEFILE $DESTFILE|sum
+
+systemctl restart tempmonitor
+

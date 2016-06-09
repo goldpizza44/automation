@@ -5,7 +5,7 @@ import time
 import os
 
 OUTCSV="/var/www/html/tempdata.csv"
-DEBUG=1
+DEBUG=0
 
 
 DS18B20=W1ThermSensor()
@@ -14,7 +14,7 @@ sensor_name = {
 "041637c1bcff":"AlexanderBedroom",
 "041637f543ff":"GuestBedroom",
 "041637bd5bff":"NikitaBedroom",
-"041637ffddff":"DanielBedroom",  # Daniel Bedroom
+"041637ffddff":"DanielBedroom",
 "0416380260ff":"UpstairsHall"
 }
 sensor_avg = {
@@ -56,14 +56,19 @@ while True:
 
 		# If the sensor is reading super high then something is wrong..try to read again
 		while ( temp > 120 ):
+			print("Sensor %s has high temp %.2f" % (sensor_name[sensor.id], temp))
 			time.sleep(0.2)
 			temp=sensor.get_temperature(W1ThermSensor.DEGREES_F)
 
 
-		print("Sensor %s has temperature %.2f" % (sensor_name[sensor.id], temp))
+		if (DEBUG == 1):
+			print("Sensor %s has temperature %.2f" % (sensor_name[sensor.id], temp))
 		sensor_avg[sensor_name[sensor.id]]+= temp
 		time.sleep(0.2)
-	print("-")
+
+	if (DEBUG == 1):
+		print("-")
+
 	minute=int(time.strftime("%M"))
 
 	if (minute != lastminute):
