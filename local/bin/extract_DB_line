@@ -1,0 +1,15 @@
+export TABLE=$1
+export CONDITION=$2
+[ "$TABLE" = "${TABLE%.*}" ] && TABLE=mythconverg.$TABLE
+
+echo "select * from $TABLE $CONDITION;"
+echo "select * from $TABLE $CONDITION;"| mysql -u mythtv --password=mythtv  | gawk -F'	' '
+BEGIN {
+	getline;
+	for(i=1;i<=NF;i++) col[i]=$i
+}
+{
+	printf("LINE: %s\n",NR)
+	for(i=1;i<=NF;i++) printf("%-8d%-30s%s\n",i,col[i],$i)
+}
+'

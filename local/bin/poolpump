@@ -1,0 +1,22 @@
+POOLPUMPON='{"poolSetting":{"MainPump":"on" } }'
+POOLPUMPOFF='{"poolSetting":{"MainPump":"off"} }'
+TURN_ON_WATERFALL='{"featureSetting":{"SpaFloor": "on" ,"SpaJets":"off"},"valveSetting":{"SpaPool": 0} }'
+TURN_ON_RETURN='{"valveSetting":{"SpaPool": 180,"BubblerReturnSpray":180,"ReturnSpray":90} }'
+
+POOLHOST=$(host poolmonitor.goldfarbs.net 172.16.2.1 | gawk '/has address/{print $NF}')
+
+if [ -z "$POOLHOST" ]
+then
+	echo "ERROR: couldn't get IP address of the poolmonitor"
+	exit
+fi
+echo POOLHOST=$POOLHOST
+
+case "$1" in
+ON|on) echo "$POOLPUMPON"|nc ${POOLHOST} 2222;;
+OFF|off) echo "$POOLPUMPOFF"|nc ${POOLHOST} 2222;;
+WATERFALL|waterfall) echo "$TURN_ON_WATERFALL"|nc ${POOLHOST} 2222;;
+RETURN|return) echo "$TURN_ON_RETURN"|nc ${POOLHOST} 2222;;
+
+*) echo "Usage: $0 [on|off|waterfall|return]"
+esac

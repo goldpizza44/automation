@@ -1,0 +1,37 @@
+for i in $*
+do
+	case "$i" in
+	DEBUG) DEBUG="YES";;
+	HEADER) HEADER="YES" ;;
+	ALL) ALL="YES";;
+	*) FILES="$FILES $i";;
+	esac
+done
+
+/usr/local/bin/xgawk -v HEADER=$HEADER -v DEBUG=$DEBUG -v ALL=$ALL '
+BEGIN {
+	XMLCHARSET="utf-8"
+	extension("xml","dlload")
+	XMLMODE=-1
+	if (HEADER=="YES" ) printf("TIME,NAME,IP,IN,OUT,TOTAL,TCP,TCP-UNKNOWN,UDP,UDP-UNKNOWN,SSH,WWW,HTTPS\n")
+}
+XMLCHARDATA {data = $0;gsub(/,/,"",data)}
+XMLENDELEM == "timestamp" {split(data,a," ");TIME=a[1]" "a[2]}
+XMLENDELEM  && XMLPATH == "/etherape/nodes/node/name/resolved_name" { NAME=data }
+XMLENDELEM  && XMLPATH == "/etherape/nodes/node/name/numeric_name" { IP=data }
+XMLENDELEM  && XMLPATH == "/etherape/nodes/node/traffic_stats/in/stats/total" { IN=data }
+XMLENDELEM  && XMLPATH == "/etherape/nodes/node/traffic_stats/out/stats/total" { OUT=data }
+XMLENDELEM  && XMLPATH == "/etherape/nodes/node/traffic_stats/tot/stats/total" { TOTAL=data }
+XMLENDELEM  && XMLPATH == "/etherape/nodes/node/traffic_stats/protocols/protocol/key" {KEY=data}
+XMLENDELEM  && XMLPATH == "/etherape/nodes/node/traffic_stats/protocols/protocol/stats/total" {
+	if (KEY=="TCP") TCPTOTAL=data
+	else if (KEY == "TCP-UNKNOWN") TCPUNKTOTAL=data
+	else if (KEY == "UDP") UDPTOTAL=data
+	else if (KEY == "UDP-UNKNOWN") UDPUNKTOTAL=data
+	else if (KEY == "SSH") SSHTOTAL=data
+	else if (KEY == "WWW") WWWTOTAL=data
+	else if (KEY == "HTTPS") HTTPSTOTAL=data
+}
+DEBUG=="YES" && XMLENDELEM {print XMLPATH "	" data}
+XMLENDELEM == "node" {if (ALL=="YES" || IP ~ /^172.16/) printf("%s,%s,%s,%s,%s,%s,%d,%d,%d,%d,%d,%d,%d\n",TIME,NAME,IP,IN,OUT,TOTAL,TCPTOTAL,TCPUNKTOTAL,UDPTOTAL,UDPUNKTOTAL,SSHTOTAL,WWWTOTAL,HTTPSTOTAL)}
+' $FILES

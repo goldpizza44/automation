@@ -1,0 +1,44 @@
+# Program will create an index.html file of all photos in a directory
+#
+# If there is a file called "captions" it will add the captions to
+# the files
+for i in $*
+do
+	case $i in 
+	-r) SORTREV=-r;;
+	esac
+done
+touch captions
+ls *avi *mpg *jpg *JPG|sort $SORTREV -t.  -k2 | gawk '
+BEGIN { 
+	while (getline < "captions") {
+		FILE=$1;$1="";Caption[FILE]=$0
+	}
+	if (Caption["Title"] != "") {
+		printf("<HTML><HEAD><TITLE>%s</TITLE></HEAD><BODY><H1>%s</H1><P>\n",Caption["Title"],Caption["Title"])
+	} else {
+		printf("<HTML><HEAD></HEAD><BODY>\n",Caption["Title"],Caption["Title"])
+	}
+}
+/.jpg/ || /.JPG/ {
+
+	if (Caption[$1] != "") {
+		printf("<P>%s<P>\n",Caption[$1])
+	} else {
+		printf("<P><a href=%s>%s</a><P>\n",$1,$1)
+	}
+	printf("<IMG SRC=%s><HR>\n",$1);
+}
+/.mpg/ || /.avi/ {
+
+	if (Caption[$1] != "") {
+		printf("<P>%s<P>\n",Caption[$1])
+	} else {
+		printf("<P><a href=%s>%s</a><P>\n",$1,$1)
+	}
+	printf("<embed width=640 height=500 src=\"%s\" autostart=yes loop=false></embed><HR>\n",$1);
+}
+END {
+	printf("</BODY></HTML>\n")
+}
+'

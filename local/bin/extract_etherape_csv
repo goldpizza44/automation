@@ -1,0 +1,132 @@
+export STARTDATE=$1
+export ENDDATE=$2
+export TARGET=$3
+
+export NIKITA_DESKTOP="Nikita-Desktop|172.16.2.132"
+export NIKITA_LAPTOP="NikitaLaptop|172.16.2.170"
+export NIKITA_PHONE="172.16.2.149|172.16.2.186"
+export NIKITA="$NIKITA_DESKTOP|$NIKITA_LAPTOP|$NIKITA_PHONE"
+export DANIEL_DESKTOP="Daniel-PC|172.16.2.177"
+export DANIEL_IPOD="Daniels-iPod|172.16.2.131"
+export DANIEL_PHONE="172.16.2.187"
+export DANIEL="$DANIEL_DESKTOP|$DANIEL_IPOD|$DANIEL_PHONE"
+export ALEX_DESKTOP="Alex-PC|172.16.2.250"
+export ALEX="$ALEX_DESKTOP"
+export ELENA="Kitchen*|172.16.2.130"
+export DAVID="goldfarb*|pizza*|*0H350826*|172.16.2.254|172.16.2.128|172.16.2.178"
+
+case "$TARGET" in 
+	Nikita-Desktop*)TARGET="$NIKITA_DESKTOP";;
+	NikitaLaptop*)TARGET="$NIKITA_LAPTOP";;
+	Daniel-PC*)TARGET="$DANIEL_DESKTOP";;
+	Nikita*) TARGET="$NIKITA";;
+	Daniel*) TARGET="$DANIEL";;
+	Alex*)   TARGET="$ALEX";;
+	KIDS)TARGET="$NIKITA|$DANIEL|$ALEX";;
+	Kitchen*|Elena*) TARGET="$ELENA";;
+	pizza*|David*) TARGET="$DAVID";;
+	
+	Sharp*|Theatre*) TARGET="172.16.2.161|172.16.2.174";;
+	TV) TARGET="Sharp*|Theatre*|172.16.2.161|172.16.2.174";;
+	OTHER) TARGET="OTHER";;	
+	FAMILY)TARGET="$NIKITA|$DANIEL|$ALEX|$ELENA|$DAVID";;
+	ALL) TARGET="ALL";;
+#	*)TARGET="Nikita*|Daniel*|Alex*|Kitchen*|pizza*|David*|USDAL0H350826*|OTHER";;
+esac
+# Generally we are interested from midnight...
+gawk -F, -v STARTTIME="$STARTDATE 00:00:00" -v ENDTIME="$ENDDATE 24:00:00" -v TARGET=$TARGET '
+function printit() {
+	if (LASTsecs == -1) {
+		print $0 > "/dev/stderr"
+		return
+	}
+	OUTTIME=strftime("%Y/%m/%d %H:%M:%S",LASTsecs)
+	TOTALcumm=TOTALdelta=0
+	for(PC in PCs) {
+		TOTALcumm+=TOTALs_cummulative[PC]
+		TOTALdelta+=TOTALs_delta[PC]
+		printf("%s,%s,%s,%d\n",OUTTIME,PC,TOTALs_cummulative[PC],TOTALs_delta[PC])
+
+	}
+	printf("%s,TOTAL,TOTAL,%s,%d\n",OUTTIME,TOTALcumm,TOTALdelta)
+	delete TOTALs_delta
+
+}
+BEGIN {
+	getline
+	for(i=1;i<=NF;i++) col[$i]=i
+	# The file should be chronological.  Search for the first entry that is our period
+	gsub(/[-\/:]/," ",STARTTIME)
+	STARTTIMEsecs=mktime(STARTTIME)
+	gsub(/[-\/:]/," ",ENDTIME)
+	ENDTIMEsecs=mktime(ENDTIME)
+
+
+	while(getline > 0) {
+		gsub(/[-\/:]/," ",$(col["TIME"]))
+		if(mktime($(col["TIME"])) >= STARTTIMEsecs) break
+	}
+}
+{
+	N=$(col["NAME"])
+	IP=$(col["IP"])	
+	
+	if (N == "172.16.2.254") N = "pizza.goldfarbs.net"
+#	else if (N == "172.16.2.130") N = "Kitchen.goldfarbs.net"
+#	else if (N == "172.16.2.131") N = "Daniels-iPod.goldfarbs.net"
+#	else if (N == "172.16.2.185") N = "Nikita-Desktop.goldfarbs.net"
+#	else if (N == "172.16.2.161") N = "SharpTV.goldfarbs.net"
+#	else if (N == "172.16.2.170") N = "NikitaLaptop.goldfarbs.net"
+#	else if (N == "172.16.2.174") N = "Theatre.goldfarbs.net"
+#	else if (N == "172.16.2.177") N = "Daniel-PC.goldfarbs.net"
+#	else if (N == "172.16.2.178") N = "USAL0H350826.goldfarbs.net"
+	else if (N == "172.16.2.250") N = "Alex-PC.goldfarbs.net"
+	else if (N == "172.16.2.252") N = "OTHER_LaserPrinter"
+	else if (N ~ /0H350826/)      N = "DavidLaptop.goldfarbs.net"
+	else if (N ~ /NPI31B333/    ) N = "OTHER_LaserPrinter"
+#	else if (N ~ /172.16.2./ && TARGET == "ALL" ) N = "OTHER"
+	else if (N ~ /172.16.2./ ) {
+		if (!(N in OTHER)) OTHER[N]="OTHER_"N
+		N = OTHER[N]
+	}
+	
+	if (TARGET != "" && TARGET != "ALL" && N !~ TARGET ) next
+
+	T=$(col["TIME"])
+	gsub(/[-\/:]/," ",T)
+	Tsecs=mktime(T)
+	if(Tsecs > ENDTIMEsecs) exit
+
+	if (Tsecs > LASTsecs) printit()
+	LASTsecs=Tsecs	
+	
+	T=$(col["TIME"])
+	PC=IP","N
+	TOTAL=$(col["TOTAL"])
+	IN=$(col["IN"])
+	OUT=$(col["OUT"])
+
+	# We are assuming that each entry will be present once in each time interval
+	timestamps[T]++
+	PCs[PC]++
+	
+
+	# If the TOTAL column is greater than the LASTTOTAL total, then get the difference 
+	# between the two and the amount of data used in that last interval
+	# If the TOTAL column is less than the LASTTOTAL, then assume that we have started again 
+	# from zero
+
+	if (LASTTOTAL[PC] > 0 && LASTTOTAL[PC] < TOTAL) {
+		TOTALdelta=TOTAL-LASTTOTAL[PC]
+		TOTALs_cummulative[PC]+=TOTALdelta
+		TOTALs_delta[PC]=TOTALdelta
+	} else {
+		TOTALs_delta[PC]=0
+	}
+	LASTTOTAL[PC]=TOTAL
+
+}
+END {
+	printit()
+}
+' ${4:-/var/www/html/etherape.csv}

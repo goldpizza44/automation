@@ -1,0 +1,116 @@
+# Program will create an index.html file of all photos in a directory
+#
+# If there is a file called "captions" it will add the captions to
+# the files
+for i in $*
+do
+	case $i in 
+	-r) SORTREV=-r;;
+	esac
+done
+touch captions
+cat captions | gawk -F"	" '
+
+$1 == "Title"  { printf("<HTML><HEAD><TITLE>%s</TITLE></HEAD><BODY><H1>%s</H1><P>\n",$2,$2);
+	TITLE=$2
+	gsub(/ /,"+",TITLE)
+	next 
+}
+
+$1 == "Zipfile" {ZIPFILE=$2;
+	printf("<a href=%s>Download Entire Set</a><P>\n",$2)
+	next
+}
+
+$1 == "Intro" {
+	while (getline) {
+		if (NF == 1 && $1 == "!") break
+		print $0
+	}
+	printf("<P>\n")
+}
+/.jpg/ || /.JPG/ || /.png/ || /.gif/ { 
+	if (length($2) > 0) { printf("<P>%s<P>",$2) }
+	printf("<a href=http://goldfarbs.net/cgi-bin/extract_print_quality.cgi?ZIPFILE=%s&IMAGE=%s>DOWNLOAD %s</a><P>\n",ZIPFILE,$1,$1)
+#	printf("<a href=mailto:dwgoldfarb@yahoo.com?subject=%s&body=&lt;a+href=\"http://goldfarbs.net/cgi-bin/extract_print_quality.cgi?ZIPFILE=%s&IMAGE=%s\"&gt;%s&lt;/a&gt;>Mail To Walgreens</a><P>\n",TITLE,ZIPFILE,$1,$1)
+	printf("<IMG SRC=%s><HR>\n",$1);
+	next
+}
+
+/.mpg/ || /.MPG/ || /.avi/ || /.AVI/|| /.flv/ || /.3GP/ || /.mp4/ || /.webm/ || /.m4v/ {
+
+
+	if (length($2) > 0) {
+		printf("<P>%s<P>",$2) 
+	}
+
+
+
+	if ($1 ~ /.mp4/ || $1 ~ /.webm/ || $1 ~ /.m4v/ ) {
+		VFILE=$1
+		sub(/\..*/,"",VFILE)
+
+		"[[ -e " VFILE ".mp4 || -e " VFILE ".m4v ]] && echo yes" |& getline result
+		
+		if(result=="yes") {
+			FILESIZE=""
+			"stat -c \"%s\" " VFILE ".mp4" |& getline FILESIZE
+
+			printf("<P><a href=%s>%s</a>  (%s bytes)<P>\n",VFILE ".mp4",VFILE ".mp4",FILESIZE)
+			SRC="<source src=\"" VFILE ".mp4\" type=\"video/mp4\">"
+		}
+
+		result=""
+		"[[ -e " VFILE ".webm ]] && echo yes" |& getline result
+		if (result=="yes") {
+			FILESIZE=""
+			"stat -c \"%s\" " VFILE ".webm" |& getline FILESIZE
+
+			printf("<P><a href=%s>%s</a>  (%s bytes)<P>\n",VFILE ".webm",VFILE ".webm",FILESIZE)
+			SRC=SRC "<source src=\"" VFILE ".webm\" type=\"video/webm\">"
+		}
+		
+
+		printf("<video width=\"640\" height=\"500\"  controls>%s</video><HR>\n",SRC)
+	} else {
+		FILESIZE=""
+		"stat -c \"%s\" " $1 |& getline FILESIZE
+
+		printf("<P><a href=%s>%s</a>  (%s bytes)<P>\n",$1,$1,FILESIZE)
+		printf("<embed width=640 height=500 src=\"%s\" autostart=yes loop=false></embed><HR>\n",$1);
+	}
+	next
+}
+END {
+	printf("</BODY></HTML>\n")
+}
+'
+
+if [ "$1" == "update" ]
+then
+	# Note that this assumes that the directory name is in the form: YYYYMMDD_something
+	# Now we can update the index.html file in the priv_photos directory.
+	TITLE=$2
+	[ -z "$2" ] && TITLE=$(grep ^Title captions | cut -f2-)
+	DIR=${PWD##*/}
+	DATE=$(echo $DIR | gawk '{split($1,a,"");printf("%s%s%s%s/%s%s/%s%s",a[1],a[2],a[3],a[4],a[5],a[6],a[7],a[8])}')
+	YEAR="<H2>${DATE%%/*}</H2>"
+	LINE=$(echo "<LI><a href=${DIR}>$DATE -- $TITLE"| sed "s!\($DATE --[^-]*\) --!\1<\/a> --!")
+	gawk -v LINE="$LINE" -v YEAR="$YEAR"  '
+	{print $0}
+	$0 == YEAR {
+		while (getline) {
+			if (/<\/UL>/) {
+				printf("%s\n</UL>\n",LINE);
+				break
+			}
+			print $0
+		}
+	}
+	' /var/www/html/priv_photos/index.html > /var/www/html/priv_photos/new.index.html
+
+	mv /var/www/html/priv_photos/index.html /var/www/html/priv_photos/old.index.html
+	mv /var/www/html/priv_photos/new.index.html /var/www/html/priv_photos/index.html
+	ls -ls /var/www/html/priv_photos/old.index.html /var/www/html/priv_photos/index.html 1>&2
+	
+fi

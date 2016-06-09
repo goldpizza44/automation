@@ -1,0 +1,220 @@
+cat $* |sed "s/:/#/"| gawk -F# '
+function printit() {
+	printf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+	AntiBlur,
+	Aperture,
+	BitsPerSample,
+	CameraModelName,
+	ColorComponents,
+	ColorReproduction,
+	ColorSpace,
+	ComponentsConfiguration,
+	CompressedBitsPerPixel,
+	Compression,
+	Contrast,
+	CreateDate,
+	CustomRendered,
+	DateTimeOriginal,
+	Directory,
+	EncodingProcess,
+	ExifByteOrder,
+	ExifImageHeight,
+	ExifImageWidth,
+	ExifToolVersionNumber,
+	ExifVersion,
+	ExposureCompensation,
+	ExposureMode,
+	ExposureProgram,
+	ExposureTime,
+	FileModificationDateTime,
+	FileName,
+	FileSize,
+	FileSource,
+	FileType,
+	Flash,
+	FlashpixVersion,
+	FNumber,
+	FocalLength,
+	ImageDescription,
+	ImageHeight,
+	ImageSize,
+	ImageWidth,
+	InteroperabilityIndex,
+	InteroperabilityVersion,
+	ISO,
+	LightSource,
+	LightValue,
+	LongExposureNoiseReduction,
+	Macro,
+	Make,
+	MaxApertureValue,
+	MeteringMode,
+	MIMEType,
+	ModifyDate,
+	Orientation,
+	Quality,
+	ResolutionUnit,
+	Saturation,
+	SceneCaptureType,
+	SceneType,
+	Sharpness,
+	ShutterSpeed,
+	ThumbnailImage,
+	ThumbnailLength,
+	ThumbnailOffset,
+	WhiteBalance,
+	XResolution,
+	YCbCrPositioning,
+	YCbCrSubSampling,
+	YResolution)
+
+	AntiBlur=Aperture=BitsPerSample=CameraModelName=ColorComponents=ColorReproduction=ColorSpace=""
+	ComponentsConfiguration=CompressedBitsPerPixel=Compression=Contrast=CreateDate=CustomRendered=""
+	DateTimeOriginal=Directory=EncodingProcess=ExifByteOrder=ExifImageHeight=ExifImageWidth=""
+	ExifToolVersionNumber=ExifVersion=ExposureCompensation=ExposureMode=ExposureProgram=ExposureTime=""
+	FileModificationDateTime=FileName=FileSize=FileSource=FileType=Flash=""
+	FlashpixVersion=FNumber=FocalLength=ImageDescription=ImageHeight=ImageSize=""
+	ImageWidth=InteroperabilityIndex=InteroperabilityVersion=ISO=LightSource=LightValue=""
+	LongExposureNoiseReduction=Macro=Make=MaxApertureValue=MeteringMode=MIMEType=""
+	ModifyDate=Orientation=Quality=ResolutionUnit=Saturation=SceneCaptureType=""
+	SceneType=Sharpness=ShutterSpeed=ThumbnailImage=ThumbnailLength=ThumbnailOffset=""
+	WhiteBalance=XResolution=YCbCrPositioning=YCbCrSubSampling=YResolution=""
+}
+BEGIN {
+	AntiBlur="AntiBlur"
+	Aperture="Aperture"
+	BitsPerSample="BitsPerSample"
+	CameraModelName="CameraModelName"
+	ColorComponents="ColorComponents"
+	ColorReproduction="ColorReproduction"
+	ColorSpace="ColorSpace"
+	ComponentsConfiguration="ComponentsConfiguration"
+	CompressedBitsPerPixel="CompressedBitsPerPixel"
+	Compression="Compression"
+	Contrast="Contrast"
+	CreateDate="CreateDate"
+	CustomRendered="CustomRendered"
+	DateTimeOriginal="DateTimeOriginal"
+	Directory="Directory"
+	EncodingProcess="EncodingProcess"
+	ExifByteOrder="ExifByteOrder"
+	ExifImageHeight="ExifImageHeight"
+	ExifImageWidth="ExifImageWidth"
+	ExifToolVersionNumber="ExifToolVersionNumber"
+	ExifVersion="ExifVersion"
+	ExposureCompensation="ExposureCompensation"
+	ExposureMode="ExposureMode"
+	ExposureProgram="ExposureProgram"
+	ExposureTime="ExposureTime"
+	FileModificationDateTime="FileModificationDateTime"
+	FileName="FileName"
+	FileSize="FileSize"
+	FileSource="FileSource"
+	FileType="FileType"
+	Flash="Flash"
+	FlashpixVersion="FlashpixVersion"
+	FNumber="FNumber"
+	FocalLength="FocalLength"
+	ImageDescription="ImageDescription"
+	ImageHeight="ImageHeight"
+	ImageSize="ImageSize"
+	ImageWidth="ImageWidth"
+	InteroperabilityIndex="InteroperabilityIndex"
+	InteroperabilityVersion="InteroperabilityVersion"
+	ISO="ISO"
+	LightSource="LightSource"
+	LightValue="LightValue"
+	LongExposureNoiseReduction="LongExposureNoiseReduction"
+	Macro="Macro"
+	Make="Make"
+	MaxApertureValue="MaxApertureValue"
+	MeteringMode="MeteringMode"
+	MIMEType="MIMEType"
+	ModifyDate="ModifyDate"
+	Orientation="Orientation"
+	Quality="Quality"
+	ResolutionUnit="ResolutionUnit"
+	Saturation="Saturation"
+	SceneCaptureType="SceneCaptureType"
+	SceneType="SceneType"
+	Sharpness="Sharpness"
+	ShutterSpeed="ShutterSpeed"
+	ThumbnailImage="ThumbnailImage"
+	ThumbnailLength="ThumbnailLength"
+	ThumbnailOffset="ThumbnailOffset"
+	WhiteBalance="WhiteBalance"
+	XResolution="XResolution"
+	YCbCrPositioning="YCbCrPositioning"
+	YCbCrSubSampling="YCbCrSubSampling"
+	YResolution="YResolution"
+
+}
+/Anti-Blur                       / { sub(/^ /,"",$2);gsub(/,/," ",$2);AntiBlur=$2 }
+/Aperture                        / { sub(/^ /,"",$2);gsub(/,/," ",$2);Aperture=$2 }
+/Bits Per Sample                 / { sub(/^ /,"",$2);gsub(/,/," ",$2);BitsPerSample=$2 }
+/Camera Model Name               / { sub(/^ /,"",$2);gsub(/,/," ",$2);CameraModelName=$2 }
+/Color Components                / { sub(/^ /,"",$2);gsub(/,/," ",$2);ColorComponents=$2 }
+/Color Reproduction              / { sub(/^ /,"",$2);gsub(/,/," ",$2);ColorReproduction=$2 }
+/Color Space                     / { sub(/^ /,"",$2);gsub(/,/," ",$2);ColorSpace=$2 }
+/Components Configuration        / { sub(/^ /,"",$2);gsub(/,/," ",$2);ComponentsConfiguration=$2 }
+/Compressed Bits Per Pixel       / { sub(/^ /,"",$2);gsub(/,/," ",$2);CompressedBitsPerPixel=$2 }
+/Compression                     / { sub(/^ /,"",$2);gsub(/,/," ",$2);Compression=$2 }
+/Contrast                        / { sub(/^ /,"",$2);gsub(/,/," ",$2);Contrast=$2 }
+/Create Date                     / { sub(/^ /,"",$2);gsub(/,/," ",$2);CreateDate=$2 }
+/Custom Rendered                 / { sub(/^ /,"",$2);gsub(/,/," ",$2);CustomRendered=$2 }
+/Date.Time Original              / { sub(/^ /,"",$2);gsub(/,/," ",$2);DateTimeOriginal=$2 }
+/Directory                       / { sub(/^ /,"",$2);gsub(/,/," ",$2);Directory=$2 }
+/Encoding Process                / { sub(/^ /,"",$2);gsub(/,/," ",$2);EncodingProcess=$2 }
+/Exif Byte Order                 / { sub(/^ /,"",$2);gsub(/,/," ",$2);ExifByteOrder=$2 }
+/Exif Image Height               / { sub(/^ /,"",$2);gsub(/,/," ",$2);ExifImageHeight=$2 }
+/Exif Image Width                / { sub(/^ /,"",$2);gsub(/,/," ",$2);ExifImageWidth=$2 }
+/ExifTool Version Number         / { sub(/^ /,"",$2);gsub(/,/," ",$2);ExifToolVersionNumber=$2 }
+/Exif Version                    / { sub(/^ /,"",$2);gsub(/,/," ",$2);ExifVersion=$2 }
+/Exposure Compensation           / { sub(/^ /,"",$2);gsub(/,/," ",$2);ExposureCompensation=$2 }
+/Exposure Mode                   / { sub(/^ /,"",$2);gsub(/,/," ",$2);ExposureMode=$2 }
+/Exposure Program                / { sub(/^ /,"",$2);gsub(/,/," ",$2);ExposureProgram=$2 }
+/Exposure Time                   / { sub(/^ /,"",$2);gsub(/,/," ",$2);ExposureTime=$2 }
+/File Modification Date.Time     / { sub(/^ /,"",$2);gsub(/,/," ",$2);FileModificationDateTime=$2 }
+/File Name                       / { sub(/^ /,"",$2);gsub(/,/," ",$2);FileName=$2 }
+/File Size                       / { sub(/^ /,"",$2);gsub(/,/," ",$2);FileSize=$2 }
+/File Source                     / { sub(/^ /,"",$2);gsub(/,/," ",$2);FileSource=$2 }
+/File Type                       / { sub(/^ /,"",$2);gsub(/,/," ",$2);FileType=$2 }
+/Flash                           / { sub(/^ /,"",$2);gsub(/,/," ",$2);Flash=$2 }
+/Flashpix Version                / { sub(/^ /,"",$2);gsub(/,/," ",$2);FlashpixVersion=$2 }
+/F Number                        / { sub(/^ /,"",$2);gsub(/,/," ",$2);FNumber=$2 }
+/Focal Length                    / { sub(/^ /,"",$2);gsub(/,/," ",$2);FocalLength=$2 }
+/Image Description               / { sub(/^ /,"",$2);gsub(/,/," ",$2);ImageDescription=$2 }
+/Image Height                    / { sub(/^ /,"",$2);gsub(/,/," ",$2);ImageHeight=$2 }
+/Image Size                      / { sub(/^ /,"",$2);gsub(/,/," ",$2);ImageSize=$2 }
+/Image Width                     / { sub(/^ /,"",$2);gsub(/,/," ",$2);ImageWidth=$2 }
+/Interoperability Index          / { sub(/^ /,"",$2);gsub(/,/," ",$2);InteroperabilityIndex=$2 }
+/Interoperability Version        / { sub(/^ /,"",$2);gsub(/,/," ",$2);InteroperabilityVersion=$2 }
+/ISO                             / { sub(/^ /,"",$2);gsub(/,/," ",$2);ISO=$2 }
+/Light Source                    / { sub(/^ /,"",$2);gsub(/,/," ",$2);LightSource=$2 }
+/Light Value                     / { sub(/^ /,"",$2);gsub(/,/," ",$2);LightValue=$2 }
+/Long Exposure Noise Reduction   / { sub(/^ /,"",$2);gsub(/,/," ",$2);LongExposureNoiseReduction=$2 }
+/Macro                           / { sub(/^ /,"",$2);gsub(/,/," ",$2);Macro=$2 }
+/Make                            / { sub(/^ /,"",$2);gsub(/,/," ",$2);Make=$2 }
+/Max Aperture Value              / { sub(/^ /,"",$2);gsub(/,/," ",$2);MaxApertureValue=$2 }
+/Metering Mode                   / { sub(/^ /,"",$2);gsub(/,/," ",$2);MeteringMode=$2 }
+/MIME Type                       / { sub(/^ /,"",$2);gsub(/,/," ",$2);MIMEType=$2 }
+/Modify Date                     / { sub(/^ /,"",$2);gsub(/,/," ",$2);ModifyDate=$2 }
+/Orientation                     / { sub(/^ /,"",$2);gsub(/,/," ",$2);Orientation=$2 }
+/Quality                         / { sub(/^ /,"",$2);gsub(/,/," ",$2);Quality=$2 }
+/Resolution Unit                 / { sub(/^ /,"",$2);gsub(/,/," ",$2);ResolutionUnit=$2 }
+/Saturation                      / { sub(/^ /,"",$2);gsub(/,/," ",$2);Saturation=$2 }
+/Scene Capture Type              / { sub(/^ /,"",$2);gsub(/,/," ",$2);SceneCaptureType=$2 }
+/Scene Type                      / { sub(/^ /,"",$2);gsub(/,/," ",$2);SceneType=$2 }
+/Sharpness                       / { sub(/^ /,"",$2);gsub(/,/," ",$2);Sharpness=$2 }
+/Shutter Speed                   / { sub(/^ /,"",$2);gsub(/,/," ",$2);ShutterSpeed=$2 }
+/Thumbnail Image                 / { sub(/^ /,"",$2);gsub(/,/," ",$2);ThumbnailImage=$2 }
+/Thumbnail Length                / { sub(/^ /,"",$2);gsub(/,/," ",$2);ThumbnailLength=$2 }
+/Thumbnail Offset                / { sub(/^ /,"",$2);gsub(/,/," ",$2);ThumbnailOffset=$2 }
+/White Balance                   / { sub(/^ /,"",$2);gsub(/,/," ",$2);WhiteBalance=$2 }
+/X Resolution                    / { sub(/^ /,"",$2);gsub(/,/," ",$2);XResolution=$2 }
+/Y Cb Cr Positioning             / { sub(/^ /,"",$2);gsub(/,/," ",$2);YCbCrPositioning=$2 }
+/Y Cb Cr Sub Sampling            / { sub(/^ /,"",$2);gsub(/,/," ",$2);YCbCrSubSampling=$2 }
+/Y Resolution                    / { sub(/^ /,"",$2);gsub(/,/," ",$2);YResolution=$2 }
+/=====/ { printit() }
+END { printit() }
+'  

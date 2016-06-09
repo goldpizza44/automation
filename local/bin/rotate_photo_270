@@ -1,0 +1,6 @@
+for i in $*
+do
+	echo $i
+	convert $i -rotate -90 x.${i##*.}
+	mv x.${i##*.} $i
+done

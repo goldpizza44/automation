@@ -1,0 +1,13 @@
+CAT=cat
+[ "${1%.gz}" != "$1" ] && CAT=gzcat
+[[ $2 == line* ]] && lnno="YES"
+$CAT $1 | gawk -F, -v line="${2#line}" -v lnno=$lnno '
+BEGIN {
+	getline;
+	for(i=1;i<=NF;i++) col[i]=$i
+}
+(lnno=="YES" && NR==line) || (lnno != "YES" &&  $0 ~ line) {
+	printf("LINE: %s\n",NR)
+	for(i=1;i<=NF;i++) printf("%-8d%-30s%s\n",i,col[i],$i)
+}
+'
