@@ -28,7 +28,7 @@ BEGIN {
 	printf("{ \"temperatures\": [\n")
 }
 {
-	printf("{ \"timestamp\":\"%s\", \"d\" : { \"AlexanderBedroom\":%s, \"GuestBedroom\":%s, \"NikitaBedroom\":%s, \"DanielBedroom\":%s , \"UpstairsHall\":%s } },\n",$1,$3,$4,$5,$6,$7);
+	printf("{ \"timestamp\":\"%s\", \"d\" : { \"AlexanderBedroom\":%.2f, \"GuestBedroom\":%.2f, \"NikitaBedroom\":%.2f, \"DanielBedroom\":%.2f , \"UpstairsHall\":%.2f , \"KitchenDining\":%.2f , \"GreatRoomOffice\":%.2f } },\n",$1,$3,$4,$5,$6,$7,$8,$9);
 
 }
 END {

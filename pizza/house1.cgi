@@ -55,7 +55,7 @@ var SprinklerTimerObj;
 
 var datasize=${DataSize}
 var humidity_line, patiotemp_line, pumptemp_line, pooltemp_line,dateaxis;
-var nikita_line,daniel_line,alexander_line,guest_line,hall_line;
+var nikita_line,daniel_line,alexander_line,guest_line,hall_line,kitchendining_line,greatroom_line;
 var labels = new Array (datasize);
 var datelabels = new Array (datasize);
 var firstload=1;
@@ -433,12 +433,82 @@ function createCharts() {
 	}
     }).draw();
 
+    // Make and draw the background charts
+    kitchendining_line = new RGraph.Line({
+	id: 'cvs_inside_downstairs',
+	data: data,
+	options: {
+
+	    title: "Downstairs Temperatures\n",
+	    titleBold: true,
+	    titleSize: 12,
+	    gutterRight: gutterRight,
+	    gutterLeft: gutterLeft,
+	    gutterTop: gutterTop,
+	    gutterBottom: gutterBottom,
+	    ymax: inside_ymax,
+	    ymin: inside_ymin,
+	    ylabelsCount: 7,
+	    numyticks:7,
+	    outofbounds: true,
+	    backgroundGridAutofit: true,
+	    backgroundGridAutofitNumvlines: 10,
+	    backgroundGridAutofitNumhlines: 14,
+//	    backgroundGridVlines: false,
+	    backgroundGridBorder: false,
+	    colors: [ 'Red','Green' ],
+	    key: [ 'Kitchen/Dining Temp', 'GreatRoom/Office Temp' ],
+	    keyPosition: 'gutter',
+	    numxticks: 10,
+	    tickmarks: null,
+	    labels: labels,
+//	    noaxes: true,
+	    textSize: 12,
+	    textAngle: 45,
+	    textColor: '#aaa',
+	    scaleZerostart: true
+	}
+    }).draw();
+
+  greatroom_line = new RGraph.Line({
+	id: 'cvs_inside_downstairs',
+	data: data,
+	options: {
+	    gutterRight: gutterRight,
+	    gutterLeft: gutterLeft,
+	    gutterTop: gutterTop,
+	    gutterBottom: gutterBottom,
+	    ymax: inside_ymax,
+	    ymin: inside_ymin,
+	    outofbounds: true,
+	    backgroundGrid: false,
+	    colors: [ 'green' ],
+	    numxticks: 10,
+	    tickmarks: null,
+	    noaxes: true,
+	    textColor: '#aaa',
+	    ylabels: false,
+	    scaleZerostart: true
+	}
+    }).draw();
+
+
     tempdateaxis_inside = new RGraph.Drawing.XAxis({
 	id: 'cvs_inside_bedrooms',
 	y: pooltemp_line.canvas.height - 25,
 	options: {
 	     labels: datelabels,
 	     noxaxis: true,	
+	     hmargin: 10,
+	}
+    }).draw()
+
+    tempdateaxis_inside_downstairs = new RGraph.Drawing.XAxis({
+	id: 'cvs_inside_downstairs',
+	y: pooltemp_line.canvas.height - 25,
+	options: {
+	     labels: datelabels,
+	     noxaxis: true,
 	     hmargin: 10,
 	}
     }).draw()
@@ -533,6 +603,8 @@ function drawInside(temperatures) {
 	RGraph.clear(daniel_line.canvas);
 	RGraph.clear(alexander_line.canvas);
 	RGraph.clear(guest_line.canvas);
+	RGraph.clear(kitchendining_line.canvas);
+	RGraph.clear(greatroom_line.canvas);
 
 	// lasttemp is the index of the last entry that will have data
 	var lasttemp=temperatures.length-2
@@ -561,6 +633,8 @@ function drawInside(temperatures) {
 		daniel_line.original_data[0][i]=temperatures[i].d.DanielBedroom
 		alexander_line.original_data[0][i]=temperatures[i].d.AlexanderBedroom
 		guest_line.original_data[0][i]=temperatures[i].d.GuestBedroom
+		kitchendining_line.original_data[0][i]=temperatures[i].d.KitchenDining
+		greatroom_line.original_data[0][i]=temperatures[i].d.GreatRoomOffice
 	}
 	
 	document.getElementById("updateTimeInside").innerHTML=temperatures[lasttemp].timestamp.split(" ")[1]
@@ -570,12 +644,25 @@ function drawInside(temperatures) {
 	daniel_line.draw();
 	alexander_line.draw();
 	guest_line.draw();
+	kitchendining_line.draw();
+	greatroom_line.draw();
 	tempdateaxis_inside.draw();
+	tempdateaxis_inside_downstairs.draw();
 }
 function sprinkerTimerSet() {
     SprinklerTimer++;
     document.getElementById("sprinklerTimer").innerHTML=SprinklerTimer
     SprinklerTimerObj=setTimeout(sprinkerTimerSet,1000)
+}
+function updateSprinklerTimer() {
+	var SprinklerSecs=parseInt(document.getElementById("sprinklerTurnOffSelect").value)
+	var t=new Date()
+	var newSecs=t.getSeconds()+SprinklerSecs
+
+	t.setSeconds(newSecs);
+	document.getElementById("sprinklerTurnOffTime").innerHTML="Sprinklers Off at: "+t.timeNow()
+	clearTimeout(SprinklerTimerObj)
+	SprinklerTimerObj=setTimeout(function() {automation('SPRINKLERS_OFF')},SprinklerSecs*1000)
 }
 
 function sprinklerCtrl(zone) {
@@ -599,6 +686,7 @@ function sprinklerCtrl(zone) {
     } else {
         document.getElementById("sprinklerTimer").innerHTML=""
 	clearTimeout(SprinklerTimerObj)
+        if (SprinklerState != "OFF") document.getElementById("sprinklerTurnOff").style.visibility="visible"
     }
 }
 
@@ -654,6 +742,7 @@ function automation(action) {
             SprinklerState=sprinklers[0].getAttribute('state')
             if (SprinklerState == "OFF" ) {
                 document.getElementById("sprinklerStateText").innerHTML="Sprinklers Off"
+		document.getElementById("sprinklerTurnOff").style.visibility="hidden"
                 var imagesrc="/sprinklers/sprinkler_off.png"
             } else if (SprinklerState == "ON" ) {
                 document.getElementById("sprinklerStateText").innerHTML="Zone "+SprinklerZone+" On"
@@ -797,6 +886,11 @@ function automation(action) {
           <canvas id="cvs_inside_bedrooms" width="800" height="400">[No canvas support]</canvas>
         </div>
       </div>
+      <div class="row">
+        <div class="col-md-12">
+          <canvas id="cvs_inside_downstairs" width="800" height="400">[No canvas support]</canvas>
+        </div>
+      </div>
     </div>
     <div id="PoolMenu" class="tab-pane fade">
       <hr style="height:12px;border:0;box-shadow: inset 0 12px 12px -12px rgba(0, 0, 0, 0.5);"/>
@@ -926,6 +1020,14 @@ function automation(action) {
 
             <TD align=center>
                <H2 id="sprinklerStateText">Sprinklers Off</H2><br>
+               <span id="sprinklerTurnOff" style="visibility:hidden;" ><select class="form-control" id="sprinklerTurnOffSelect" onChange="updateSprinklerTimer()">
+<option>TURN SPRINKLERS OFF:</option>
+<option value=300>5 Minutes</option>
+<option value=600>10 Minutes</option>
+<option value=1200>20 Minutes</option>
+<option value=1800>30 Minutes</option>
+<option value=3600>60 Minutes</option>
+</select><br><span id="sprinklerTurnOffTime"></span></span><br>
                <span id="sprinklerTimer"> </span>
             </TD>
             </table>

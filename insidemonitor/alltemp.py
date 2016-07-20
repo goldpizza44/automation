@@ -15,14 +15,18 @@ sensor_name = {
 "041637f543ff":"GuestBedroom",
 "041637bd5bff":"NikitaBedroom",
 "041637ffddff":"DanielBedroom",
-"0416380260ff":"UpstairsHall"
+"0416380260ff":"UpstairsHall",
+"80000027968e":"KitchenDiningRoomTheatre",
+"800000046e8c":"GreatRoomOffice",
 }
 sensor_avg = {
 "AlexanderBedroom":0,
 "GuestBedroom":0,
 "NikitaBedroom":0,
 "DanielBedroom":0,
-"UpstairsHall":0
+"UpstairsHall":0,
+"KitchenDiningRoomTheatre":0,
+"GreatRoomOffice":0
 }
 
 r = 0
@@ -31,7 +35,7 @@ count=0.0
 #GPIO.setmode(GPIO.BOARD)
 #GPIO.setwarnings(False)
 
-HEADER="TIME,COUNT,AlexanderBedroom,GuestBedroom,NikitaBedroom,DanielBedroom,UpstairsHall\n"
+HEADER="TIME,COUNT,AlexanderBedroom,GuestBedroom,NikitaBedroom,DanielBedroom,UpstairsHall,KitchenDiningRoomTheatre,GreatRoomOffice\n"
 
 try:
 	if os.stat(OUTCSV).st_size > 0:
@@ -72,13 +76,15 @@ while True:
 	minute=int(time.strftime("%M"))
 
 	if (minute != lastminute):
-		f.write("{},{},{:3.2f},{:3.2f},{:3.2f},{:3.2f},{:3.2f}\n".format(
+		f.write("{},{},{:3.2f},{:3.2f},{:3.2f},{:3.2f},{:3.2f},{:3.2f},{:3.2f}\n".format(
         		time.strftime("%Y/%m/%d %H:%M:%S"),r, 
 			sensor_avg["AlexanderBedroom"]/count,
 			sensor_avg["GuestBedroom"]/count,
 			sensor_avg["NikitaBedroom"]/count,
 			sensor_avg["DanielBedroom"]/count,
-			sensor_avg["UpstairsHall"]/count))
+			sensor_avg["UpstairsHall"]/count,
+			sensor_avg["KitchenDiningRoomTheatre"]/count,
+			sensor_avg["GreatRoomOffice"]/count))
 
 		f.flush()
 
@@ -87,6 +93,8 @@ while True:
 		sensor_avg["NikitaBedroom"]=0
 		sensor_avg["DanielBedroom"]=0
 		sensor_avg["UpstairsHall"]=0
+		sensor_avg["KitchenDiningRoomTheatre"]=0
+		sensor_avg["GreatRoomOffice"]=0
 
 		count=0
 		lastminute=minute
