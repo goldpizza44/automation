@@ -23,7 +23,7 @@ do
 done
 unset IFS
 
-ssh odroid@odroid64.goldfarbs.net "tail -${DataSize} /var/www/html/tempdata.csv" | gawk -F, '
+ssh odroid@tempmonitor.goldfarbs.net "tail -${DataSize} /var/www/html/tempdata.csv" | gawk -F, '
 BEGIN {
 	printf("{ \"temperatures\": [\n")
 }
