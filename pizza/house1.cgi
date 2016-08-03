@@ -1145,7 +1145,7 @@ function automation(action) {
         <h4 class="modal-title">New Voicemail</h4>
       </div>
       <div class="modal-body">
-        <h1 style='color:red'>New Voicemail</h1>
+        <h1 style='color:red'>New Voicemail&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a data-toggle="pill" data-dismiss="modal" href="#VmailMenu" class="btn btn-primary">GOTO VMAIL</a></h1>
         <span id='NewVoicemail_time'>00:00:00</span>
       </div>
       <div class="modal-footer">
