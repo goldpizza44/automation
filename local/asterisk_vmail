@@ -52,7 +52,7 @@ FNR==1 {
 /duration=/ {sub(/duration=/,"",$0);duration=$0}
 END { printit() }
 
-' */*.txt
+' $(ls -t */*.txt)
 }
 
 case $ACTION in
