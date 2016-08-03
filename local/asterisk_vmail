@@ -7,21 +7,22 @@ cd $VMAILBASE
 FORMAT="XML"
 ACTION="INFO"
 
-while getopts "f:m:M:a:" opt
+while getopts "f:m:M:a:d:" opt
 do
 	case "${opt}" in 
 	f) FORMAT=${OPTARG};;
 	m) MBOX=${OPTARG};;
 	M) MSGNUM=${OPTARG};;
 	a) ACTION=${OPTARG};;
+	d) noteDATA=${OPTARG};;
 	esac
 done
 
 function show_info {
 	gawk  -v OUTFORMAT=$FORMAT '
 BEGIN {
-	XMLformat="<vmail new=\"%s\"><mbox>%s</mbox><msgnum>%s</msgnum><timestamp>%s</timestamp><callerID>%s</callerID><duration>%s</duration></vmail>\n"
-	JSONformat="{voicemail: {new: \"%s\", mbox: \"%s\", msgnum: \"%s\", timestamp: \"%s\", callerID: \"%s\", duration: %d }}\n"
+	XMLformat="<vmail new=\"%s\"><mbox>%s</mbox><msgnum>%s</msgnum><timestamp>%s</timestamp><callerID>%s</callerID><duration>%s</duration><note>%s</note></vmail>\n"
+	JSONformat="{voicemail: {new: \"%s\", mbox: \"%s\", msgnum: \"%s\", timestamp: \"%s\", callerID: \"%s\", duration: %d, note: \"%s\" }}\n"
 
 	if ( OUTFORMAT=="XML") 	OUTFORMAT=XMLformat
 	else if (OUTFORMAT=="JSON") OUTFORMAT=JSONformat
@@ -32,9 +33,9 @@ BEGIN {
 function printit() {
 	if ( mbox!= "Deleted") 	{
 		
-		printf(OUTFORMAT,newmsg,mbox,MSGNUM,timestamp,callerid,duration)
+		printf(OUTFORMAT,newmsg,mbox,MSGNUM,timestamp,callerid,duration,note)
 	}
-	mbox=MSGNUM=timestamp=callerid=duration=""
+	mbox=MSGNUM=timestamp=callerid=duration=note=""
 	newmsg="NO"
 }
 FNR==1 {
@@ -50,9 +51,10 @@ FNR==1 {
 /callerid=/ {sub(/callerid=/,"",$0);gsub(/</,"\\&lt;",$0);gsub(/>/,"\\&gt;",$0);callerid=$0 }
 /origtime=/ {sub(/origtime=/,"",$0);timestamp=strftime("%Y/%m/%d %H:%M:%S",$0);if ((systime()-$0) < 300) newmsg="YES"}
 /duration=/ {sub(/duration=/,"",$0);duration=$0}
+/Note=/ {sub(/Note=/,"",$0);note=$0}
 END { printit() }
 
-' $(ls -t */*.txt)
+' $(grep origtime= */*txt|sort -rt: -k2|cut -f1 -d:)
 }
 
 case $ACTION in
@@ -71,5 +73,25 @@ case $ACTION in
 	done
 	
 	show_info
+	;;
+UPDATE_NOTE)
+	if [ ! -s "${MBOX}/msg${MSGNUM}.txt" ]
+	then
+		echo "<ERROR>${MBOX}/msg${MSGNUM}.txt doesn't exist</ERROR>"
+		exit
+	fi
+
+	gawk -v noteDATA="$noteDATA" '
+/^Note=/ {
+	printf("Note=%s\n",noteDATA);
+	notefound=1;
+	next
+}
+{ print $0 }
+END { if (notefound !=1) printf("Note=%s\n",noteDATA) }
+' ${MBOX}/msg${MSGNUM}.txt > /var/tmp/$$.msg${MSGNUM}.txt
+	# Preserve the file time 
+	cp /var/tmp/$$.msg${MSGNUM}.txt ${MBOX}/msg${MSGNUM}.txt
+	rm /var/tmp/$$.msg${MSGNUM}.txt
 	;;
 esac

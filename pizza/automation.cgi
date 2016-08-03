@@ -8,7 +8,6 @@
 #
 # Written by David Goldfarb
 #
-
 DATE=$(date "+%Y%m%d-%H%M")
 
 if [ "${REMOTE_ADDR%.*}" != 172.16.2 -a "${REMOTE_ADDR}" != 127.0.0.1 ]
@@ -114,8 +113,15 @@ TURN_OFF_SPA)		POOLSETTING='{"valveSetting":{"SpaPool": 180} }'		;;
 MAIN_PUMP_ON)		POOLSETTING='{"poolSetting":{"MainPump":"on" } }'		;;
 MAIN_PUMP_OFF)		POOLSETTING='{"poolSetting":{"MainPump":"off"} }'		;;
 
-GET_SETTINGS)		POOLSETTING='{"getSettings":"all"}'
-			(heyu show config;heyu info) | gawk '
+DELETE_VMAIL)		/usr/local/bin/asterisk_vmail -m $mbox -M $msgnum -a DELETE;;
+UPDATE_VMAIL)		NOTE=$(python -c "import sys, urllib as ul; print ul.unquote_plus(sys.argv[1])" "${Note}")
+			/usr/local/bin/asterisk_vmail -m $mbox -M $msgnum -a UPDATE_NOTE -d "$NOTE"
+			;;
+
+GET_SETTINGS)		POOLSETTING='{"getSettings":"all"}';;
+esac
+
+(heyu show config;heyu info) | gawk '
 /HOUSECODE/ { HOUSECODE=$NF
 	printf("<X10settings housecode=\"%s\">",HOUSECODE)
 }
@@ -142,10 +148,6 @@ END {printf("</X10settings>\n") }'
 	t=sprintf("1970 01 01 %d%d %d%d 00",a[1],a[2],a[3],a[4]);
 	printf("<lightson time=\"%s\"/>\n",strftime("%H:%M",mktime(t)-900))
 }'
-;;
-DELETE_VMAIL)	/usr/local/bin/asterisk_vmail -m $mbox -M $msgnum -a DELETE;;
-
-esac
 
 [ -n "$POOLSETTING" ]&&echo "$POOLSETTING"|nc poolmonitor.goldfarbs.net 2222|/usr/local/bin/JSONtoXML.py
 

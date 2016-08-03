@@ -690,6 +690,11 @@ function sprinklerCtrl(zone) {
     }
 }
 
+function sendVmailNote(mbox,msgnum) {
+    var notedata=document.getElementById('msgNote'+msgnum).value
+    var action='UPDATE_VMAIL&msgnum='+msgnum+'&mbox='+mbox+'&Note='+encodeURI(notedata)
+    automation(action)
+}
 
 function automation(action) {
     var xhttp=new XMLHttpRequest();
@@ -738,6 +743,7 @@ function automation(action) {
                 }
             }
             var sprinklers=xmldata.getElementsByTagName("sprinklers")
+
             SprinklerZone=sprinklers[0].getAttribute('zone')
             SprinklerState=sprinklers[0].getAttribute('state')
             if (SprinklerState == "OFF" ) {
@@ -748,6 +754,7 @@ function automation(action) {
                 document.getElementById("sprinklerStateText").innerHTML="Zone "+SprinklerZone+" On"
                 var imagesrc="/sprinklers/sprinkler_zone"+sprinklers[0].getAttribute('zone')+".png"
             }
+
             var zone_image=document.getElementById('sprinklerState');
             zone_image.src=imagesrc
 
@@ -764,10 +771,12 @@ function automation(action) {
                 var timestamp=vmail[i].getElementsByTagName("timestamp")[0].childNodes[0].nodeValue
                 var callerID=vmail[i].getElementsByTagName("callerID")[0].childNodes[0].nodeValue
                 var duration=vmail[i].getElementsByTagName("duration")[0].childNodes[0].nodeValue
-
-
-
-
+                var note=vmail[i].getElementsByTagName("note")[0].childNodes;
+		if (note.length > 0) {
+                     var notedata=vmail[i].getElementsByTagName("note")[0].childNodes[0].nodeValue
+                } else {
+                     var notedata=""
+                }
                 
                 var vmailhtml='<tr style="font-size: 250%" id="msg'+msgnum+'">'+
                               '<td rowspan=2>'+ msgnum +
@@ -775,10 +784,15 @@ function automation(action) {
                               '</td>'+
                               '<td class="text-center">'+timestamp.split(" ")[0]+'<br>'+timestamp.split(" ")[1]+'</td>'
                 if (vmail[i].getAttribute("new") == "YES") {
-                              vmailhtml=vmailhtml+'<td style="font-weight:bold;color:red">'+callerID+'</td>'
+                              vmailhtml=vmailhtml+'<td style="font-weight:bold;color:red">'+callerID
                 } else {
-                              vmailhtml=vmailhtml+'<td style="font-weight:bold">'+callerID+'</td>'
+                              vmailhtml=vmailhtml+'<td style="font-weight:bold">'+callerID
                 }
+                              var noteID='msgNote'+msgnum
+                              if (document.getElementById(noteID)) notedata=document.getElementById(noteID).value
+
+                              vmailhtml=vmailhtml+'<br><textarea id="'+noteID+'" style="font-size: 50%;font-weight:normal">'+notedata+'</textarea>'
+                              vmailhtml=vmailhtml+'<button style="font-size: 50%;" id="updateNote'+msgnum+'" onclick="sendVmailNote('+"'"+mbox+"','"+msgnum+"'"+')">UPDATE</button></td>'
                               vmailhtml=vmailhtml+'<td>'+duration+'</td>'+
 
                               '</tr>'+
