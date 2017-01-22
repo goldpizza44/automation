@@ -14,14 +14,16 @@ import time
 import pigpio
 import DHT22
 import RPi.GPIO as GPIO
+import socket
+import sys
 from math import log10
 import os
 
 # Constants to calculate temp from thermistor
 # These three items together will shift the line up and down
-THERMISTORNOMINAL=10000.0   
+THERMISTORNOMINAL=9400.0   
 TEMPERATURENOMINAL=25.0   
-SERIESRESISTOR=9500.0
+SERIESRESISTOR=9900.0
 
 # This constant will change the slope of the line
 #BCOEFFICIENT= 3600.0
@@ -169,6 +171,22 @@ while True:
 			PressureRAW_avg/count,((PressureRAW_avg/count)*0.066854)-8.42246))
 
 		f.flush()
+
+		t=open("/var/www/html/config/spa_heater_target","r")
+		poolctlsocket=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+		poolctlsocket.connect(('localhost',2222))
+		for l in t:
+			if ("#" in l):
+				continue
+			print ("{:3.2f} compared to {:3.2f}\n".format(float(l),ThermistorTemp_F_avg/count))
+			if float(l) < (ThermistorTemp_F_avg/count):
+				print "Turn Off Heater"
+				poolctlsocket.send('{"SpaTempControl":"off"}')
+			else:
+				print "Turn on Heater"
+				poolctlsocket.send('{"SpaTempControl":"on"}')
+		poolctlsocket.close()
+		t.close()
 
 		DS18B20_temp_avg=0
 		ThermistorTemp_F_avg=0

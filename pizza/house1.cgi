@@ -48,6 +48,7 @@ Content-Type: text/html
 
 <script type="text/javascript">
 var DimmerTimer;
+var SpaTempTimer;
 var SprinklerZone;
 var SprinklerState;
 var SprinklerTimer;
@@ -60,6 +61,9 @@ var labels = new Array (datasize);
 var datelabels = new Array (datasize);
 var firstload=1;
 var disableGarageDoorSpeech=0
+var spa_temp="?"
+var spa_temp_target=0
+var spa_heater_on_off
 var vmailhead='<tr>'+
               '<th class="text-center">#</th>'+
               '<th class="text-center">Date/Time</th>'+
@@ -554,6 +558,8 @@ function drawOutside(temperatures) {
 	document.getElementById("patiotemp_m").innerHTML="<small>Patio Temp</small><br/>"+temperatures[lasttemp].d.patiotemp
 	document.getElementById("pumptemp_m").innerHTML="<small>Pump Temp</small><br/>"+temperatures[lasttemp].d.pumptemp
 	document.getElementById("pooltemp_m").innerHTML="<small>Water Temp</small><br/>"+temperatures[lasttemp].d.pooltemp
+	spa_temp=temperatures[lasttemp].d.pooltemp
+        document.getElementById("SpaHeater_Temp").innerHTML="<span style='color:red;font-size: 500%;font-weight: bold;'>"+spa_temp+"</span>"
 
 	/**
 	* Create the Label Array
@@ -717,6 +723,22 @@ function automation(action) {
                     id=settings[i].getAttribute("name")+"_RPM"
                     document.getElementById(id).innerHTML="<small>RPM:</small>"+settings[i].childNodes[0].nodeValue
                 }
+                if (settings[i].getAttribute("name")=="SpaHeater") {
+                    spa_heater_on_off=settings[i].childNodes[0].nodeValue
+                    if (spa_heater_on_off=="on") {
+                        document.getElementById('SpaHeater_Target').innerHTML=spa_temp_target.toString()
+                    } else {
+                        document.getElementById('SpaHeater_Target').innerHTML=spa_heater_on_off
+                    }
+                    document.getElementById("SpaHeater_OnOff").innerHTML="SPA&nbsp;HEATER:"+spa_heater_on_off
+                    document.getElementById("SpaHeater_Temp").innerHTML="<span style='color:red;font-size: 500%;font-weight: bold;'>"+spa_temp+"</span>"
+
+                }
+                if (settings[i].getAttribute("name")=="SpaTempTarget") {
+                    spa_temp_target=parseInt(settings[i].childNodes[0].nodeValue)
+                    \$('#SPATEMP_SLIDER').slider('setValue',spa_temp_target);	
+                }
+
                 if (settings[i].getAttribute("name")=="garage_door") {
                     id=settings[i].getAttribute("name")
                     if (settings[i].childNodes[0].nodeValue=="off") {
@@ -1101,8 +1123,47 @@ function automation(action) {
     </div>
     <div id="SpaMenu" class="tab-pane fade">
       <hr style="height:12px;border:0;box-shadow: inset 0 12px 12px -12px rgba(0, 0, 0, 0.5);"/>
-      <h3>Spa</h3>
+      <div class="row">
+        <div class="row">
+          <div class="col-sm-2"><span style="font-size: 200%">Temperature&nbsp;:</span></div>
+          <div class="col-sm-4">70F&nbsp;&nbsp;&nbsp; <input id="SPATEMP_SLIDER"  data-slider-id="SPATEMPSLIDER" type="text" data-slider-min="70" data-slider-max="110" data-slider-step="1" data-slider-value="70" data-slider-orientation="horizantal"/> &nbsp;&nbsp;110F</div>
+          <div class="col-sm-2" ><span style="font-size: 200%">Target&nbsp;Temp:</span></div>
+          <div class="col-sm-2" ><span style="font-size: 200%" id="SpaHeater_Target">?</span></div>
+        </div>
+        <P>
+
+        <div class="row">
+          <div class="col-sm-2"><span style="font-size: 200%">Spa&nbsp;Mode:</span></div>
+          <div class="col-sm-2"><button id="Spa_on"  onClick="automation('TURN_ON_SPA')"  type="button" class="btn btn-info btn-lg ">ON</button></div>
+          <div class="col-sm-2"><button id="Spa_off" onClick="automation('TURN_OFF_SPA')" type="button" class="btn btn-info btn-lg ">OFF</button></div>
+        </div>
+        <P>
+        <div class="row">
+          <div class="col-sm-2"><span style="font-size: 200%">Spa&nbsp;Heater:</span></div>
+          <div class="col-sm-2"><button id="Spa_heater_on"  onClick="automation('TURN_ON_SPA_HEATER')"  type="button" class="btn btn-info btn-lg ">ON</button></div>
+          <div class="col-sm-2"><button id="Spa_heater_off" onClick="automation('TURN_OFF_SPA_HEATER')" type="button" class="btn btn-info btn-lg ">OFF</button></div>
+        </div>
+	<P>
+        <div class="row">
+          <div class="col-sm-2"><span style="font-size: 200%">Main&nbsp;Pump:</span></div>
+          <div class="col-sm-2"><button id="MainPump_on"  onClick="automation('MAIN_PUMP_ON')"  type="button" class="btn btn-info btn-lg ">ON</button></div>
+          <div class="col-sm-2"><button id="MainPump_off" onClick="automation('MAIN_PUMP_OFF')" type="button" class="btn btn-info btn-lg ">OFF</button></div>
+        </div>
+        <P>
+        <div class="row">
+          <div class="col-sm-2"><span style="font-size: 200%">Spa&nbsp;Jets:</span></div>
+          <div class="col-sm-2"><button id="Spa_jets_on"  onClick="automation('TURN_ON_SPA_JETS')"  type="button" class="btn btn-info btn-lg ">ON</button></div>
+          <div class="col-sm-2"><button id="Spa_jets_off" onClick="automation('TURN_OFF_SPA_JETS')" type="button" class="btn btn-info btn-lg ">OFF</button></div>
+        </div>
+      </div>
+
       <hr style="border:0;height:1px;background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));"/>
+      <div class="row">
+        <div class="col-sm-2" ><h1 id="SpaHeater_OnOff">SPA_HEATER: ?</h1></div>
+      </div>
+      <div class="row">
+        <div class="col-sm-2" ><h1 id="SpaHeater_Temp">?</h1></div>
+      </div>
 
     </div>
     <div id="VmailMenu" class="tab-pane fade">
@@ -1253,6 +1314,18 @@ document.getElementById("clock").addEventListener('click',function() {
 //        return 'Current value: ' + value;
 //    }
 //});
+\$('#SPATEMP_SLIDER').slider({
+//    reversed: true,
+    formatter: function(value) {
+	// Only send if there is a half second pause
+	if (value == 0||spa_temp_target==0||spa_temp_target==value) return
+	clearTimeout(SpaTempTimer);
+	SpaTempTimer=setTimeout(function() {automation('SPATEMP&temperature='+value.toString())},500);
+	document.getElementById('SpaHeater_Target').innerHTML=value.toString()
+
+        return 'Current value: ' + value;
+    }
+});
 
 </script>
 </body>

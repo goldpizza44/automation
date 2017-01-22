@@ -99,7 +99,7 @@ TURN_ON_BUBBLER)	POOLSETTING='{"valveSetting":{"SpaPool": 180, "BubblerReturnSpr
 TURN_OFF_BUBBLER)	POOLSETTING='{"valveSetting":{"BubblerReturnSpray": 180} }'			;;
 			
 TURN_ON_SPRAY)		POOLSETTING='{"valveSetting":{"SpaPool": 180, "BubblerReturnSpray":0, "ReturnSpray":180 }  }'	;;
-TURN_OFF_SPRAY)		POOLSETTING='{"featureSetting":{"Sprays":  "off"} }'			;;
+TURN_OFF_SPRAY)		POOLSETTING='{"valveSetting":{"ReturnSpray": 90 } }'			;;
 
 TURN_ON_WATERFALL)	POOLSETTING='{"featureSetting":{"SpaFloor": "on" ,"SpaJets":"off"},"valveSetting":{"SpaPool": 0} }'	;;
 TURN_OFF_WATERFALL)	POOLSETTING='{"valveSetting":{"SpaPool": 180} }'	;;
@@ -107,8 +107,14 @@ TURN_OFF_WATERFALL)	POOLSETTING='{"valveSetting":{"SpaPool": 180} }'	;;
 TURN_ON_RETURN)		POOLSETTING='{"valveSetting":{"SpaPool": 180,"BubblerReturnSpray":180,"ReturnSpray":90} }' ;;
 TURN_OFF_RETURN)	POOLSETTING='{"valveSetting":{"SpaPool": 0} }'	;;
 
-TURN_ON_SPA)		POOLSETTING='{"valveSetting":{"SpaPool": 0  } }'			;;
-TURN_OFF_SPA)		POOLSETTING='{"valveSetting":{"SpaPool": 180} }'		;;
+TURN_ON_SPA)		POOLSETTING='{"valveSetting":{"SpaPool": 0,"MainDrainSpaPool":0  } }'		;;
+TURN_OFF_SPA)		POOLSETTING='{"valveSetting":{"SpaPool": 180,"MainDrainSpaPool":90 } }'	;;
+TURN_ON_SPA_HEATER)	POOLSETTING='{"poolSetting":{"SpaHeater":"on", "MainPump":"on" },"valveSetting":{"SpaPool": 0,"MainDrainSpaPool":0  } }'		;;
+TURN_OFF_SPA_HEATER)	POOLSETTING='{"poolSetting":{"SpaHeater":"off" } }'	;;
+TURN_OFF_SPA_JETS)	POOLSETTING='{"valveSetting":{"SpaFloorJets":90} }' ;;
+TURN_ON_SPA_JETS)	POOLSETTING='{"valveSetting":{"SpaFloorJets":0 ,"SpaPool":0} }' ;;
+SPATEMP)		POOLSETTING='{"poolSetting":{"SpaTempTarget":'$temperature'}}' ;;
+
 
 MAIN_PUMP_ON)		POOLSETTING='{"poolSetting":{"MainPump":"on" } }'		;;
 MAIN_PUMP_OFF)		POOLSETTING='{"poolSetting":{"MainPump":"off"} }'		;;
@@ -150,5 +156,4 @@ END {printf("</X10settings>\n") }'
 }'
 
 [ -n "$POOLSETTING" ]&&echo "$POOLSETTING"|nc poolmonitor.goldfarbs.net 2222|/usr/local/bin/JSONtoXML.py
-
 echo "</BODY></HTML>"
