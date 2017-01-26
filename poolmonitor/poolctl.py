@@ -26,13 +26,11 @@ A2=25 #A2=22
 A3=24 #A3=18
 A4=23 #A4=16
 A5=18 #A5=12
-A6=15 #A6=10
-A7=14 #A7=8
+#A6=15 #A6=10
+#A7=14 #A7=8
 A12=3 #A12=5
 A13=2 #A13=3
 A14=27 #A14=13
-
-# P5 Header
 A8=28
 A9=29
 A10=30
@@ -46,8 +44,8 @@ GPIO.setup(A2, GPIO.OUT)
 GPIO.setup(A3, GPIO.OUT)
 GPIO.setup(A4, GPIO.OUT)
 GPIO.setup(A5, GPIO.OUT)
-GPIO.setup(A6, GPIO.OUT)
-GPIO.setup(A7, GPIO.OUT)
+#GPIO.setup(A6, GPIO.OUT)
+#GPIO.setup(A7, GPIO.OUT)
 GPIO.setup(A8, GPIO.OUT)
 GPIO.setup(A9, GPIO.OUT)
 GPIO.setup(A10, GPIO.OUT)
@@ -68,8 +66,8 @@ def activateRELAY(relay,setting="False",read_set="set"):
 	if(relay==3): RELAY=A3; setting=not setting
 	if(relay==4): RELAY=A4; setting=not setting
 	if(relay==5): RELAY=A5; setting=not setting
-	if(relay==6): RELAY=A6; setting=not setting
-	if(relay==7): RELAY=A7; setting=not setting
+#	if(relay==6): RELAY=A6; setting=not setting
+#	if(relay==7): RELAY=A7; setting=not setting
 
         # These are positive logic
         if(relay==8):  RELAY=A8
@@ -124,6 +122,7 @@ positionlist={}
 featurelist={}
 featureposition={}
 column=[]
+SpaHeater='off'
 
 f=open("/var/www/html/config/possible_positions","r")
 for l in f:
@@ -323,18 +322,22 @@ def setFeatureList(featureChangeList):
 
 	return newFeatures
 
-poollist={'PoolLight':12,'MainPump':13,'SpaHeater':14}
+poollist={'PoolLight':12,'MainPump':13,'SpaHeater':14,'SpaTempTarget':'/var/www/html/config/spa_heater_target'}
 poolcolor='off'
 
 def setPoolList(poolChangeList):
 	global poolcolor
 	for p in poolChangeList:
+
+		if p == "SpaTempTarget":
+			t=open(poollist[p],"w")
+			t.write(str(poolChangeList[p]))
+			t.close()
 		if poolChangeList[p]=='on':
 			if DEBUG: print "Activating RELAY "+str(poollist[p])
 			activateRELAY(poollist[p],True)
 		elif poolChangeList[p]=='off':
-			if p == "PoolLight":
-				poolcolor='off'
+			if p == "PoolLight": poolcolor='off'
 			if DEBUG: print "Deactivating RELAY "+str(poollist[p])
 			activateRELAY(poollist[p],False)
 
@@ -346,6 +349,12 @@ def getPoolList():
 	for p in poollist:
 		if p == 'PoolLight':
 			poolsettings[p]=poolcolor
+		elif p == 'SpaTempTarget':
+			t=open(poollist[p],"r")
+			for l in t:
+				if ("#" in l): continue
+				poolsettings[p]=int(l)
+			t.close()
 		elif p == 'MainPump':
 			# Variable speed pump read speed...for now 
 			# Hard code in speed
@@ -353,6 +362,9 @@ def getPoolList():
 				poolsettings[p]='3450'
 			else:
 				poolsettings[p]='0'
+		elif p == 'SpaHeater':
+			# Use the global variable instead of the relay setting
+			poolsettings[p]=SpaHeater
 		elif activateRELAY(poollist[p],read_set="read"):
 			poolsettings[p]='on'
 		else:
@@ -409,6 +421,12 @@ def poolLight(color):
 	poolcolor=color
 
 def startValveServer():
+	global SpaHeater
+	if activateRELAY(poollist['SpaHeater'],read_set="read"):
+		SpaHeater='on'
+	else:
+		SpaHeater='off'
+
 	sock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 	server_address=('0.0.0.0',2222)
@@ -419,7 +437,7 @@ def startValveServer():
 	while True:
 		# Wait for a connection
 		connection, client_address=sock.accept()
-		if (client_address[0] != '172.16.2.254' and client_address[0] != 'localhost'):
+		if (client_address[0] != '172.16.2.254' and client_address[0] != 'localhost' and client_address[0] != '127.0.0.1' ):
 			print "connection from unknown IP "+client_address[0]
 			connection.close()
 			continue
@@ -465,7 +483,22 @@ def startValveServer():
 					elif settingType == "poolSetting":
 						poolChangeList=valveJSON["poolSetting"]
 						poolChangeList={p:poolChangeList[p] for p in poolChangeList if p in poollist}
+						print poolChangeList
+						if "SpaHeater" in poolChangeList:
+							SpaHeater=poolChangeList["SpaHeater"]
+						print "SpaHeater = "+SpaHeater  
 						settinglist["pool"]=setPoolList(poolChangeList)
+					elif settingType == "SpaTempControl":
+						if SpaHeater == "on":
+							poolChangeList=valveJSON["SpaTempControl"]
+							if valveJSON["SpaTempControl"] == "on":
+								poolChangeList={"SpaHeater":"on"}
+							else:
+								poolChangeList={"SpaHeater":"off"}
+							settinglist["pool"]=setPoolList(poolChangeList)
+						else:
+							print 'Ignoring SpaTempControl because Spa Not On'	
+
 					elif settingType == "poolColor":
 						poolLight(valveJSON["poolColor"]["Color"])
 						print "Main poolcolor="+poolcolor

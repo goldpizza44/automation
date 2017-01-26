@@ -30,6 +30,7 @@ Content-Type: text/html
 <head>
     <link rel="stylesheet" href="http://pizza.goldfarbs.net/bootstrap/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="http://pizza.goldfarbs.net/bootstrap/css/bootstrap-slider.min.css"/>
+    <link rel="stylesheet" href="http://pizza.goldfarbs.net/bootstrap/css/bootstrap-clockpicker.min.css"/>
     <link rel="stylesheet" href="http://pizza.goldfarbs.net/bootstrap/css/horiz_tabscroll.css"/>
     <link rel="stylesheet" href="http://pizza.goldfarbs.net/fullcalendar/fullcalendar.css"/>
     <link rel="stylesheet" href="http://pizza.goldfarbs.net/fullcalendar/fullcalendar.print.css" media="print" />
@@ -38,6 +39,7 @@ Content-Type: text/html
     <script type="text/javascript" src="http://pizza.goldfarbs.net/bootstrap/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="http://pizza.goldfarbs.net/bootstrap/js/bootstrap-slider.min.js"></script>
     <script type="text/javascript" src="http://pizza.goldfarbs.net/bootstrap/js/modernizr.js"></script>
+    <script type="text/javascript" src="http://pizza.goldfarbs.net/bootstrap/js/bootstrap-clockpicker.min.js"></script>
     <script type="text/javascript" src="http://pizza.goldfarbs.net/fullcalendar/lib/moment.min.js"></script>
     <script type="text/javascript" src="http://pizza.goldfarbs.net/fullcalendar/fullcalendar.js"></script>
     <script type="text/javascript" src="http://pizza.goldfarbs.net/RGraph/libraries/RGraph.common.core.js" ></script>
@@ -764,6 +766,16 @@ function automation(action) {
                     }
                 }
             }
+            var SpaTimer=xmldata.getElementsByTagName("SpaTimer")
+
+            if (SpaTimer.length==1) {
+                document.getElementById("SpaReadyTime").value=SpaTimer[0].getAttribute("on")
+                document.getElementById("SpaStopTime").value=SpaTimer[0].getAttribute("off")
+            } else {
+                document.getElementById("SpaReadyTime").value=""
+                document.getElementById("SpaStopTime").value=""
+            }
+
             var sprinklers=xmldata.getElementsByTagName("sprinklers")
 
             SprinklerZone=sprinklers[0].getAttribute('zone')
@@ -1125,38 +1137,61 @@ function automation(action) {
       <hr style="height:12px;border:0;box-shadow: inset 0 12px 12px -12px rgba(0, 0, 0, 0.5);"/>
       <div class="row">
         <div class="row">
-          <div class="col-sm-2"><span style="font-size: 200%">Temperature&nbsp;:</span></div>
-          <div class="col-sm-4">70F&nbsp;&nbsp;&nbsp; <input id="SPATEMP_SLIDER"  data-slider-id="SPATEMPSLIDER" type="text" data-slider-min="70" data-slider-max="110" data-slider-step="1" data-slider-value="70" data-slider-orientation="horizantal"/> &nbsp;&nbsp;110F</div>
-          <div class="col-sm-2" ><span style="font-size: 200%">Target&nbsp;Temp:</span></div>
-          <div class="col-sm-2" ><span style="font-size: 200%" id="SpaHeater_Target">?</span></div>
+          <div class="col-sm-4"><span style="font-size: 200%">Temperature&nbsp;:</span></div>
+          <div class="col-sm-6">70F&nbsp;&nbsp;&nbsp; <input id="SPATEMP_SLIDER"  data-slider-id="SPATEMPSLIDER" type="text" data-slider-min="70" data-slider-max="110" data-slider-step="1" data-slider-value="70" data-slider-orientation="horizantal"/> &nbsp;&nbsp;110F</div>
+          <div class="col-sm-2" ><span style="font-size: 200%">Target<br>Temp:</span>
+          <span style="font-size: 200%" id="SpaHeater_Target">?</span></div>
         </div>
         <P>
 
         <div class="row">
-          <div class="col-sm-2"><span style="font-size: 200%">Spa&nbsp;Mode:</span></div>
+          <div class="col-sm-4"><span style="font-size: 200%">Spa&nbsp;Mode:</span></div>
           <div class="col-sm-2"><button id="Spa_on"  onClick="automation('TURN_ON_SPA')"  type="button" class="btn btn-info btn-lg ">ON</button></div>
           <div class="col-sm-2"><button id="Spa_off" onClick="automation('TURN_OFF_SPA')" type="button" class="btn btn-info btn-lg ">OFF</button></div>
         </div>
         <P>
         <div class="row">
-          <div class="col-sm-2"><span style="font-size: 200%">Spa&nbsp;Heater:</span></div>
+          <div class="col-sm-4"><span style="font-size: 200%">Spa&nbsp;Heater:</span></div>
           <div class="col-sm-2"><button id="Spa_heater_on"  onClick="automation('TURN_ON_SPA_HEATER')"  type="button" class="btn btn-info btn-lg ">ON</button></div>
           <div class="col-sm-2"><button id="Spa_heater_off" onClick="automation('TURN_OFF_SPA_HEATER')" type="button" class="btn btn-info btn-lg ">OFF</button></div>
         </div>
 	<P>
         <div class="row">
-          <div class="col-sm-2"><span style="font-size: 200%">Main&nbsp;Pump:</span></div>
+          <div class="col-sm-4"><span style="font-size: 200%">Main&nbsp;Pump:</span></div>
           <div class="col-sm-2"><button id="MainPump_on"  onClick="automation('MAIN_PUMP_ON')"  type="button" class="btn btn-info btn-lg ">ON</button></div>
           <div class="col-sm-2"><button id="MainPump_off" onClick="automation('MAIN_PUMP_OFF')" type="button" class="btn btn-info btn-lg ">OFF</button></div>
         </div>
         <P>
         <div class="row">
-          <div class="col-sm-2"><span style="font-size: 200%">Spa&nbsp;Jets:</span></div>
+          <div class="col-sm-4"><span style="font-size: 200%">Spa&nbsp;Jets:</span></div>
           <div class="col-sm-2"><button id="Spa_jets_on"  onClick="automation('TURN_ON_SPA_JETS')"  type="button" class="btn btn-info btn-lg ">ON</button></div>
           <div class="col-sm-2"><button id="Spa_jets_off" onClick="automation('TURN_OFF_SPA_JETS')" type="button" class="btn btn-info btn-lg ">OFF</button></div>
         </div>
       </div>
 
+      <hr style="border:0;height:1px;background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));"/>
+      <div class="row">
+        <div class="col-sm-2"><span style="font-size: 200%">Spa&nbsp;Ready:</span></div>
+        <div class="col-sm-2">
+          <div class="input-group clockpicker" data-placement="top" data-align="left" data-donetext="Done">
+            <input type="text" class="form-control" value="19:30" id="SpaReadyTime">
+            <span class="input-group-addon"><span class="glyphicon glyphicon-time"></span></span>
+          </div>
+        </div>
+        <div class="col-sm-2">&nbsp;</div>
+        <div class="col-sm-2"><span style="font-size: 200%">Spa&nbsp;Off:</span></div>
+        <div class="col-sm-2">
+          <div class="input-group clockpicker" data-placement="top" data-align="left" data-donetext="Done">
+            <input type="text" class="form-control" value="21:30" id="SpaStopTime">
+            <span class="input-group-addon"><span class="glyphicon glyphicon-time"></span></span>
+          </div>
+        </div>
+      </div>
+      <P>
+      <div class="row">
+          <div class="col-sm-4">&nbsp;</div>
+          <div class="col-sm-2"><button id="CancelSpaSched"  onClick="automation('SPASCHEDULE')"  type="button" class="btn btn-info btn-lg ">CANCEL&nbsp;SPA&nbsp;SCHEDULE</button></div>
+      </div>
       <hr style="border:0;height:1px;background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));"/>
       <div class="row">
         <div class="col-sm-2" ><h1 id="SpaHeater_OnOff">SPA_HEATER: ?</h1></div>
@@ -1326,7 +1361,24 @@ document.getElementById("clock").addEventListener('click',function() {
         return 'Current value: ' + value;
     }
 });
-
+\$('.clockpicker').clockpicker({
+    placement: 'top',
+    align: 'left',
+    donetext: 'Done',
+//    init:             function() { console.log("colorpicker initiated");    },
+//    beforeShow:       function() { console.log("before show");              },
+//    afterShow:        function() { console.log("after show");               },
+//    beforeHide:       function() { console.log("before hide");              },
+//    afterHide:        function() { console.log("after hide");               },
+//    beforeHourSelect: function() { console.log("before hour selected");     },
+//    afterHourSelect:  function() { console.log("after hour selected");      },
+//    beforeDone:       function() { console.log("before done");              },
+    afterDone:        function() { 
+	var SpaReadyTime=document.getElementById('SpaReadyTime').value
+	var SpaStopTime=document.getElementById('SpaStopTime').value
+	automation('SPASCHEDULE&SpaReadyTime='+SpaReadyTime+'&SpaStopTime='+SpaStopTime+'&temperature='+spa_temp_target)
+	}
+});
 </script>
 </body>
 </html>
