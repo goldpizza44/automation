@@ -1,0 +1,94 @@
+#!/bin/bash
+echo "
+
+-----------------------------------------" >> /tmp/sprinkler_log
+
+# I have found that somethings the X10 command is missed (due to interference?)
+# So I hit the on button twice, and the off button twice
+date >> /tmp/sprinkler_log
+# Zone 1
+CURRENT_ZONE=$(cat /usr/local/etc/heyu/current_sprinkler_zone|gawk '{print $1}');
+let CURRENT_ZONE=CURRENT_ZONE+1                    				
+(( CURRENT_ZONE > 5 )) && CURRENT_ZONE=1
+echo "$CURRENT_ZONE	ON" > /usr/local/etc/heyu/current_sprinkler_zone
+/usr/local/bin/heyu on sprinklers
+sleep 30
+/usr/local/bin/heyu on sprinklers
+sleep 1200
+echo "$CURRENT_ZONE	OFF" > /usr/local/etc/heyu/current_sprinkler_zone
+/usr/local/bin/heyu off sprinklers
+sleep 30
+/usr/local/bin/heyu off sprinklers
+sleep 30
+
+date >> /tmp/sprinkler_log
+# Zone 2
+CURRENT_ZONE=$(cat /usr/local/etc/heyu/current_sprinkler_zone|gawk '{print $1}');
+let CURRENT_ZONE=CURRENT_ZONE+1                    				
+(( CURRENT_ZONE > 5 )) && CURRENT_ZONE=1
+echo "$CURRENT_ZONE	ON" > /usr/local/etc/heyu/current_sprinkler_zone
+/usr/local/bin/heyu on sprinklers
+sleep 30
+/usr/local/bin/heyu on sprinklers
+sleep 1200
+echo "$CURRENT_ZONE	OFF" > /usr/local/etc/heyu/current_sprinkler_zone
+/usr/local/bin/heyu off sprinklers
+sleep 30
+/usr/local/bin/heyu off sprinklers
+sleep 30
+
+date >> /tmp/sprinkler_log
+# Zone 3
+CURRENT_ZONE=$(cat /usr/local/etc/heyu/current_sprinkler_zone|gawk '{print $1}');
+let CURRENT_ZONE=CURRENT_ZONE+1                    				
+(( CURRENT_ZONE > 5 )) && CURRENT_ZONE=1
+echo "$CURRENT_ZONE	ON" > /usr/local/etc/heyu/current_sprinkler_zone
+/usr/local/bin/heyu on sprinklers
+sleep 30
+/usr/local/bin/heyu on sprinklers
+sleep 1200
+echo "$CURRENT_ZONE	OFF" > /usr/local/etc/heyu/current_sprinkler_zone
+/usr/local/bin/heyu off sprinklers
+sleep 30
+/usr/local/bin/heyu off sprinklers
+sleep 30
+
+date >> /tmp/sprinkler_log
+# Zone 4
+CURRENT_ZONE=$(cat /usr/local/etc/heyu/current_sprinkler_zone|gawk '{print $1}');
+let CURRENT_ZONE=CURRENT_ZONE+1                    				
+(( CURRENT_ZONE > 5 )) && CURRENT_ZONE=1
+echo "$CURRENT_ZONE	ON" > /usr/local/etc/heyu/current_sprinkler_zone
+/usr/local/bin/heyu on sprinklers
+sleep 30
+/usr/local/bin/heyu on sprinklers
+sleep 1200
+echo "$CURRENT_ZONE	OFF" > /usr/local/etc/heyu/current_sprinkler_zone
+/usr/local/bin/heyu off sprinklers
+sleep 30
+/usr/local/bin/heyu off sprinklers
+sleep 30
+
+date >> /tmp/sprinkler_log
+# Zone 5
+CURRENT_ZONE=$(cat /usr/local/etc/heyu/current_sprinkler_zone|gawk '{print $1}');
+let CURRENT_ZONE=CURRENT_ZONE+1                    				
+(( CURRENT_ZONE > 5 )) && CURRENT_ZONE=1
+echo "$CURRENT_ZONE	ON" > /usr/local/etc/heyu/current_sprinkler_zone
+/usr/local/bin/heyu on sprinklers
+sleep 30
+/usr/local/bin/heyu on sprinklers
+sleep 1200
+echo "$CURRENT_ZONE	OFF" > /usr/local/etc/heyu/current_sprinkler_zone
+/usr/local/bin/heyu off sprinklers
+sleep 30
+/usr/local/bin/heyu off sprinklers
+
+
+# Hit it a couple of times to make sure that we don't leave the sprinklers on
+sleep 60
+/usr/local/bin/heyu off sprinklers
+sleep 60
+/usr/local/bin/heyu off sprinklers
+sleep 60
+/usr/local/bin/heyu off sprinklers

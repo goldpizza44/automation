@@ -1,0 +1,8 @@
+#ValveNum ValveName		RelayClockWise	RelayCounterClockWise
+1	ReturnSpray		0	1
+2	BubblerReturnSpray	2	3
+3	SpaPool			4	5
+4	SpaFloorJets		10	11
+5	MainDrainSpaPool	8	9
+
+

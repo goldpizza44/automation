@@ -1,0 +1,37 @@
+# VALVECOLUMNS gives the order of the valves below
+VALVECOLUMNS: SpaFloorJets	SpaPool	BubblerReturnSpray	ReturnSpray
+FEATURES: SpaJets SpaFloor Bubbler Sprays Return
+
+# -1 is dont care
+0	0	-1	-1	SpaJets
+0	90	0	0	SpaJets,Bubbler,Sprays,Return
+0	90	0	180	SpaJets,Bubbler,Return
+0	90	0	90	SpaJets,Bubbler,Sprays
+0	90	180	0	SpaJets,Sprays,Return
+0	90	180	180	SpaJets,Sprays
+0	90	180	90	SpaJets,Return
+0	90	90	-1	SpaJets,Bubbler
+180	0	-1	-1	SpaJets,SpaFloor
+180	90	0	0	SpaJets,SpaFloor,Bubbler,Sprays,Return
+180	90	0	180	SpaJets,SpaFloor,Bubbler,Sprays
+180	90	0	90	SpaJets,SpaFloor,Bubbler,Return
+180	90	180	0	SpaJets,SpaFloor,Sprays,Return
+180	90	180	180	SpaJets,SpaFloor,Sprays
+180	90	180	90	SpaJets,SpaFloor,Return
+180	90	90	-1	SpaJets,SpaFloor,Bubbler
+90	0	-1	-1	SpaFloor
+90	90	0	0	SpaFloor,Bubbler,Sprays,Return
+90	90	0	180	SpaFloor,Bubbler,Sprays
+90	90	0	90	SpaFloor,Bubbler,Return
+90	90	180	0	SpaFloor,Sprays,Return
+90	90	180	180	SpaFloor,Sprays
+90	90	180	90	SpaFloor,Return
+90	90	90	-1	SpaFloor,Bubbler
+-1	180	0	0	Sprays,Return,Bubbler
+-1	180	0	180	Sprays,Bubbler
+-1	180	0	90	Bubbler,Return
+-1	180	180	0	Sprays,Return
+-1	180	180	180	Sprays
+-1	180	180	90	Return
+-1	180	90	-1	Bubbler
+

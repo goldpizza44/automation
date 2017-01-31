@@ -34,59 +34,59 @@ echo "<HTML><BODY>"
 echo $ACTION
 case "$ACTION" in
 ALL_LIGHTS_ON)
-			ssh pi@poolmonitor "heyu on  exterior_front" 2>&1;
-			ssh pi@poolmonitor "heyu on  exterior_rear" 2>&1;
-			ssh pi@poolmonitor "heyu on  courtyard" 2>&1;
-			ssh pi@poolmonitor "heyu on  exterior_ne" 2>&1;
+			heyu on  exterior_front 2>&1;
+			heyu on  exterior_rear 2>&1;
+			heyu on  courtyard 2>&1;
+			heyu on  exterior_ne 2>&1;
 			echo '{"lights":{"exterior_front":"on","exterior_rear":"on","courtyard":"on","exterior_ne":"on"}}'|/usr/local/bin/JSONtoXML.py
 			;;
 ALL_LIGHTS_OFF)
-			ssh pi@poolmonitor "heyu off  exterior_front" 2>&1;
-			ssh pi@poolmonitor "heyu off  exterior_rear" 2>&1;
-			ssh pi@poolmonitor "heyu off  courtyard" 2>&1;
-			ssh pi@poolmonitor "heyu off  exterior_ne" 2>&1;
+			heyu off  exterior_front 2>&1;
+			heyu off  exterior_rear 2>&1;
+			heyu off  courtyard 2>&1;
+			heyu off  exterior_ne 2>&1;
 			echo '{"lights":{"exterior_front":"off","exterior_rear":"off","courtyard":"off","exterior_ne":"off"}}'|/usr/local/bin/JSONtoXML.py
 			;;
-EXTERIOR_FRONT_ON)  ssh pi@poolmonitor "heyu on  exterior_front" 2>&1;;
-EXTERIOR_FRONT_OFF) ssh pi@poolmonitor "heyu off exterior_front" 2>&1;;
-EXTERIOR_NE_ON)     ssh pi@poolmonitor "heyu on  exterior_ne" 2>&1;;
-EXTERIOR_NE_OFF)    ssh pi@poolmonitor "heyu off exterior_ne" 2>&1;;
-EXTERIOR_REAR_ON)   ssh pi@poolmonitor "heyu on  exterior_rear" 2>&1;;
-EXTERIOR_REAR_OFF)  ssh pi@poolmonitor "heyu off exterior_rear" 2>&1;;
+EXTERIOR_FRONT_ON)  heyu on  exterior_front 2>&1;;
+EXTERIOR_FRONT_OFF) heyu off exterior_front 2>&1;;
+EXTERIOR_NE_ON)     heyu on  exterior_ne 2>&1;;
+EXTERIOR_NE_OFF)    heyu off exterior_ne 2>&1;;
+EXTERIOR_REAR_ON)   heyu on  exterior_rear 2>&1;;
+EXTERIOR_REAR_OFF)  heyu off exterior_rear 2>&1;;
 SPRINKLERS_ON)      CURRENT_ZONE=$(cat /usr/local/etc/heyu/current_sprinkler_zone|gawk '{print $1}');
 			let CURRENT_ZONE=CURRENT_ZONE+1                    				
 			(( CURRENT_ZONE > 5 )) && CURRENT_ZONE=1
-			ssh pi@poolmonitor "heyu on  sprinklers" 2>&1
+			heyu on  sprinklers 2>&1
 			echo "$CURRENT_ZONE	ON" > /usr/local/etc/heyu/current_sprinkler_zone
                         echo "<sprinklers zone='$CURRENT_ZONE' state='ON'/>"
 			;;
 SPRINKLERS_OFF)     CURRENT_ZONE=$(cat /usr/local/etc/heyu/current_sprinkler_zone|gawk '{print $1}');
-			ssh pi@poolmonitor "heyu off sprinklers" 2>&1
+			heyu off sprinklers 2>&1
 			echo "$CURRENT_ZONE	OFF" > /usr/local/etc/heyu/current_sprinkler_zone
                         echo "<sprinklers zone='$CURRENT_ZONE' state='OFF'/>"
 			;;
 SPRINKLER_ZONE)     CURRENT_ZONE=$(cat /usr/local/etc/heyu/current_sprinkler_zone|gawk '{print $1}');
 			while (( CURRENT_ZONE != NEW_ZONE ))
 			do
-				ssh pi@poolmonitor "heyu on sprinklers" 2>&1;sleep 10;ssh pi@poolmonitor "heyu off sprinklers" 2>&1;sleep 10
+				heyu on sprinklers 2>&1;sleep 10;heyu off sprinklers 2>&1;sleep 10
 				let CURRENT_ZONE=CURRENT_ZONE+1
 				(( CURRENT_ZONE > 5 )) && CURRENT_ZONE=1
 			done
 			echo "$CURRENT_ZONE	ON" > /usr/local/etc/heyu/current_sprinkler_zone
-			ssh pi@poolmonitor "heyu on sprinklers" 2>&1;
+			heyu on sprinklers 2>&1;
 			;;
-COURTYARD_ON)       ssh pi@poolmonitor "heyu on  courtyard" 2>&1;;
-COURTYARD_OFF)      ssh pi@poolmonitor "heyu off courtyard" 2>&1;;
-PONDPUMP_ON)        ssh pi@poolmonitor "heyu on  pond_pump" 2>&1;;
-PONDPUMP_OFF)       ssh pi@poolmonitor "heyu off pond_pump" 2>&1;;
-PONDLIGHTS_ON)      ssh pi@poolmonitor "heyu on  pond_lights" 2>&1;;
-PONDLIGHTS_OFF)     ssh pi@poolmonitor "heyu off pond_lights" 2>&1;;
-DAVIDLAMP_ON)       ssh pi@poolmonitor "heyu on  david_lamp" 2>&1;;
-DAVIDLAMP_OFF)      ssh pi@poolmonitor "heyu off david_lamp" 2>&1;;
-DAVIDLAMP_DIM)      ssh pi@poolmonitor "heyu dimb david_lamp $dimlevel" 2>&1;;
-THEATRELAMP_ON)     ssh pi@poolmonitor "heyu on  theatre_lamp" 2>&1;;
-THEATRELAMP_OFF)    ssh pi@poolmonitor "heyu off theatre_lamp" 2>&1;;
-THEATRELAMP_DIM)    ssh pi@poolmonitor "heyu dimb theatre_lamp $dimlevel" 2>&1;;
+COURTYARD_ON)       heyu on  courtyard 2>&1;;
+COURTYARD_OFF)      heyu off courtyard 2>&1;;
+PONDPUMP_ON)        heyu on  pond_pump 2>&1;;
+PONDPUMP_OFF)       heyu off pond_pump 2>&1;;
+PONDLIGHTS_ON)      heyu on  pond_lights 2>&1;;
+PONDLIGHTS_OFF)     heyu off pond_lights 2>&1;;
+DAVIDLAMP_ON)       heyu on  david_lamp 2>&1;;
+DAVIDLAMP_OFF)      heyu off david_lamp 2>&1;;
+DAVIDLAMP_DIM)      heyu dimb david_lamp $dimlevel 2>&1;;
+THEATRELAMP_ON)     heyu on  theatre_lamp 2>&1;;
+THEATRELAMP_OFF)    heyu off theatre_lamp 2>&1;;
+THEATRELAMP_DIM)    heyu dimb theatre_lamp $dimlevel 2>&1;;
 
 POOL_LIGHT_ON)		POOLSETTING='{"poolSetting":{"PoolLight":"on"}}'		;;
 POOL_LIGHT_OFF)		POOLSETTING='{"poolSetting":{"PoolLight":"off"}}'		;;
@@ -116,12 +116,16 @@ TURN_ON_SPA_JETS)	POOLSETTING='{"valveSetting":{"SpaFloorJets":0 ,"SpaPool":0} }
 SPATEMP)		POOLSETTING='{"poolSetting":{"SpaTempTarget":'$temperature'}}' ;;
 
 SPASCHEDULE)		
-			ssh -q pi@poolmonitor "atrm \$(atq -q c|gawk '{print \$1}')" > /dev/null 2>&1
+			# at queue c is for starttime, at queue d is for endtime
+			atrm $(atq -q c|gawk '{print $1}') > /dev/null 2>&1
+			atrm $(atq -q d|gawk '{print $1}') > /dev/null 2>&1
+echo "SpaStartTime=$SpaStartTime   SpaStopTime=$SpaStopTime" 1>&2
+
 			if [ -n "$SpaReadyTime" -a -n "$temperature" ]
 			then
 				# Get the current water temperature and use that with the target temperature
 				# to calculate the time needed for warming
-				CURRENTTEMP=$(ssh -q pi@poolmonitor "tail -1 /var/www/html/tempdata.csv|cut -d, -f6")
+				CURRENTTEMP=$(tail -1 /var/www/html/tempdata.csv|cut -d, -f6)
 				
 				SpaOnTime=$(echo "$SpaReadyTime" | gawk -F: -v CURRENTTEMP=$CURRENTTEMP -v TARGETTEMP=$temperature '
 {
@@ -134,13 +138,19 @@ SPASCHEDULE)
 
 }
 ')
-				cat <<! | ssh pi@poolmonitor "at -q c $SpaOnTime > /dev/null 2>&1" 
+			fi
+			if [ -n "$SpaStartTime" ]
+			then
+				SpaStartTime=$(echo $SpaStartTime|sed "s/%20//")
+echo "SpaStartTime=$SpaStartTime" 1>&2
+				cat <<! | at -q c $SpaStartTime > /dev/null 
 echo '{"poolSetting":{"SpaHeater":"on","MainPump":"on" },"valveSetting":{"SpaPool": 0,"MainDrainSpaPool":0  } }' | /bin/nc localhost 2222
 !
 			fi
 			if [ -n "$SpaStopTime" ]
 			then
-				cat <<! | ssh pi@poolmonitor "at -q c $SpaStopTime > /dev/null 2>&1"
+				SpaStopTime=$(echo $SpaStopTime|sed "s/%20//")
+				cat <<! | at -q d $SpaStopTime > /dev/null 
 echo '{"poolSetting":{"SpaHeater":"off","MainPump":"off" } }' | /bin/nc localhost 2222
 !
 			fi
@@ -158,7 +168,8 @@ GET_SETTINGS)		POOLSETTING='{"getSettings":"all"}';;
 esac
 
 
-(ssh pi@poolmonitor "cat /usr/local/var/tmp/heyu/heyu.info.out") | gawk '
+
+cat /usr/local/var/tmp/heyu/heyu.info.out | gawk '
 /HOUSECODE/ { HOUSECODE=$NF
 	printf("<X10settings housecode=\"%s\">",HOUSECODE)
 }
@@ -186,6 +197,6 @@ END {printf("</X10settings>\n") }'
 	printf("<lightson time=\"%s\"/>\n",strftime("%H:%M",mktime(t)-900))
 }'
 
-[ -n "$POOLSETTING" ]&&echo "$POOLSETTING"|nc poolmonitor.goldfarbs.net 2222|/usr/local/bin/JSONtoXML.py
-ssh pi@poolmonitor atq -q c |sort -n| gawk '{SpaStartTime=$5;getline;SpaStopTime=$5;printf("<SpaTimer on=\"%s\" off=\"%s\"/>\n",SpaStartTime,SpaStopTime)}'
+[ -n "$POOLSETTING" ]&&echo "$POOLSETTING"|nc localhost 2222|/usr/local/bin/JSONtoXML.py
+(atq -q c;atq -q d)| gawk '{sub(/:..$/,"",$5);if ($7 == "c") {SpaStartTime=$5} else if ($7 == "d") {SpaStopTime=$5}}END {printf("<SpaTimer on=\"%s\" off=\"%s\"/>\n",SpaStartTime,SpaStopTime)}'
 echo "</BODY></HTML>"
