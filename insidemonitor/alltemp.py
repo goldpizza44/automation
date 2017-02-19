@@ -6,6 +6,7 @@ import socket
 import json
 import threading
 import os
+import collections
 
 OUTCSV="/var/www/html/tempdata.csv"
 DEBUG=1
@@ -13,30 +14,54 @@ DEBUG=1
 
 DS18B20=W1ThermSensor()
 
-sensor_name = {
-"041637c1bcff":"AlexanderBedroom",
-"041637f543ff":"GuestBedroom",
-"041637bd5bff":"NikitaBedroom",
-"041637ffddff":"DanielBedroom",
-"0416380260ff":"UpstairsHall",
-"80000027968e":"KitchenDiningRoomTheatre",
-"800000046e8c":"GreatRoomOffice",
-}
-sensor_avg = {
-"AlexanderBedroom":0,
-"GuestBedroom":0,
-"NikitaBedroom":0,
-"DanielBedroom":0,
-"UpstairsHall":0,
-"KitchenDiningRoomTheatre":0,
-"GreatRoomOffice":0
-}
+# This is an unordered dictionary...
+#sensor_name = {
+#"041637c1bcff":"AlexanderBedroom",
+#"041637f543ff":"GuestBedroom",
+#"041637bd5bff":"NikitaBedroom",
+#"041637ffddff":"DanielBedroom",
+#"0416380260ff":"UpstairsHall",
+#"80000027968e":"KitchenDiningRoomTheatre",
+#"800000046e8c":"GreatRoomOffice",
+#}
 
+# Using an OrderedDict so that the columns will print in order
+sensor_name = collections.OrderedDict()
+sensor_name["041637c1bcff"]="AlexanderBedroom"
+sensor_name["041637f543ff"]="GuestBedroom"
+sensor_name["041637bd5bff"]="NikitaBedroom"
+sensor_name["041637ffddff"]="DanielBedroom"
+sensor_name["0416380260ff"]="UpstairsHall"
+sensor_name["80000027968e"]="KitchenDiningRoomTheatre"
+sensor_name["800000046e8c"]="GreatRoomOffice"
+
+thermostat = { "UpstairsHall", "KitchenDiningRoomTheatre", "GreatRoomOffice", "MasterBedroom" }
+
+sensor_avg = {}
+sensor_current = {}
+temp_target = {}
 
 wpi.wiringPiSetup()
-CALL_HEAT_COOL_PIN=21
-HEAT_COOL_PIN=22
-FAN_PIN=23
+CALL_HEAT_COOL_PIN=1
+HEAT_COOL_PIN=2
+FAN_PIN=3
+
+thermostat_pinlist={}
+thermostat_pinlist[("GreatRoomOffice",CALL_HEAT_COOL_PIN)]=21 # brown/white
+thermostat_pinlist[("GreatRoomOffice",HEAT_COOL_PIN)]=22      # orange/white
+thermostat_pinlist[("GreatRoomOffice",FAN_PIN)]=23            # green/white
+
+thermostat_pinlist[("UpstairsHall",CALL_HEAT_COOL_PIN)]=12    # brown/white
+thermostat_pinlist[("UpstairsHall",HEAT_COOL_PIN)]=13         # orange/white
+thermostat_pinlist[("UpstairsHall",FAN_PIN)]=14               # green/white
+
+thermostat_pinlist[("KitchenDiningRoomTheatre",CALL_HEAT_COOL_PIN)]=6 # brown/white
+thermostat_pinlist[("KitchenDiningRoomTheatre",HEAT_COOL_PIN)]=10     # orange/white
+thermostat_pinlist[("KitchenDiningRoomTheatre",FAN_PIN)]=11           # green/white
+
+thermostat_pinlist[("MasterBedroom",CALL_HEAT_COOL_PIN)]=0 # brown/white
+thermostat_pinlist[("MasterBedroom",HEAT_COOL_PIN)]=2      # orange/white
+thermostat_pinlist[("MasterBedroom",FAN_PIN)]=3            # green/white
 
 # GPIO/RELAYS have negative logic.  zero switches on the relay
 # for use with HEAT_COOL_PIN
@@ -47,12 +72,23 @@ HVAC_ON=0
 HVAC_OFF=1
 
 # Set the pins to OUTPUTs
-wpi.pinMode(CALL_HEAT_COOL_PIN,1)
-wpi.pinMode(HEAT_COOL_PIN,1)
-wpi.pinMode(FAN_PIN,1)
+for pin in thermostat:
+	wpi.pinMode(thermostat_pinlist[(pin,CALL_HEAT_COOL_PIN)],1)
+	wpi.pinMode(thermostat_pinlist[(pin,HEAT_COOL_PIN)],1)
+	wpi.pinMode(thermostat_pinlist[(pin,FAN_PIN)],1)
 
-HEADER="TIME,COUNT,AlexanderBedroom,GuestBedroom,NikitaBedroom,DanielBedroom,UpstairsHall,KitchenDiningRoomTheatre,GreatRoomOffice\n"
+HEADER="TIME,COUNT"
+for sensorID,sensorName in sensor_name.iteritems():
+	HEADER=HEADER+","+sensorName
+	sensor_current[sensorName]=0
 
+for unit in thermostat:
+	temp_target[unit]=0
+
+HEADER=HEADER+"\n"
+print "HEADER="+HEADER
+
+# Open the CSV datafile as global 'f'
 try:
 	if os.stat(OUTCSV).st_size > 0:
 		f=open(OUTCSV,"a")
@@ -64,7 +100,14 @@ except:
 	f.write("0"+HEADER)
 
 
+def clearSensorAVG():
+	for sensorID,sensorName in sensor_name.iteritems():
+		if DEBUG == 1:  print "Clearing "+sensorName
+		sensor_avg[sensorName]=0
+
 def monitorTemps():
+	global sensor_current
+	clearSensorAVG()
 	lastminute=int(time.strftime("%M"))
 	r = 0
 	count=0.0
@@ -95,25 +138,20 @@ def monitorTemps():
 		minute=int(time.strftime("%M"))
 
 		if (minute != lastminute):
-			f.write("{},{},{:3.2f},{:3.2f},{:3.2f},{:3.2f},{:3.2f},{:3.2f},{:3.2f}\n".format(
-				time.strftime("%Y/%m/%d %H:%M:%S"),r, 
-				sensor_avg["AlexanderBedroom"]/count,
-				sensor_avg["GuestBedroom"]/count,
-				sensor_avg["NikitaBedroom"]/count,
-				sensor_avg["DanielBedroom"]/count,
-				sensor_avg["UpstairsHall"]/count,
-				sensor_avg["KitchenDiningRoomTheatre"]/count,
-				sensor_avg["GreatRoomOffice"]/count))
+			# Minute just changed.  Write a line to the CSV file
+			f.write("{},{}".format(time.strftime("%Y/%m/%d %H:%M:%S"),r))
+
+			for sensorID,sensorName in sensor_name.iteritems():
+				f.write(",{:3.2f}".format(sensor_avg[sensorName]/count))
+				sensor_current[sensorName]=sensor_avg[sensorName]/count
+				print "Setting sensor_current["+sensorName+"]="+str(sensor_current[sensorName])
+
+
+			f.write("\n")
 
 			f.flush()
 
-			sensor_avg["AlexanderBedroom"]=0
-			sensor_avg["GuestBedroom"]=0
-			sensor_avg["NikitaBedroom"]=0
-			sensor_avg["DanielBedroom"]=0
-			sensor_avg["UpstairsHall"]=0
-			sensor_avg["KitchenDiningRoomTheatre"]=0
-			sensor_avg["GreatRoomOffice"]=0
+			clearSensorAVG()
 
 			count=0
 			lastminute=minute
@@ -124,6 +162,7 @@ def monitorTemps():
 		time.sleep(3) # Overall INTERVAL second polling.
 
 def listenForInstruction():
+	global sensor_current
 	# Listen for instructions on TCP port 2222
 	sock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	server_address=('0.0.0.0',2222)
@@ -160,9 +199,17 @@ def listenForInstruction():
 
 				for inst in instructionJSON:
 					if inst == "getTemp":
-						result='{"Temperature":"yes"}'
+						if instructionJSON[inst] in sensor_name.values():
+							result='{"'+instructionJSON[inst]+'":'+str(sensor_current[instructionJSON[inst]])+'}'
+						else:
+							result='{"getTemp":"no"}'
+
 					elif inst == "setTemp":
-						result='{"SetTemp":"yes"}'
+						if instructionJSON[inst] in thermostat:
+							temp_target[instructionJSON[inst]]=1
+							result='{"setTemp":"yes"}'
+						else:
+							result='{"setTemp":"no"}'
 					else:
 						result='{"UnknownInstruction":"'+inst+'"}'
 
