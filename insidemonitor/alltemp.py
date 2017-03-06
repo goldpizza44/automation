@@ -1,6 +1,6 @@
 #!/usr/bin/python -u
 from w1thermsensor import W1ThermSensor
-import wiringpi2 as wpi
+import wiringpi as wpi
 import time
 import socket
 import json
