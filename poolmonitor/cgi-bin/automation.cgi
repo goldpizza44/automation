@@ -164,7 +164,48 @@ UPDATE_VMAIL)		NOTE=$(python -c "import sys, urllib as ul; print ul.unquote_plus
 			/usr/local/bin/asterisk_vmail -m $mbox -M $msgnum -a UPDATE_NOTE -d "$NOTE"
 			;;
 
+SET_AUDIO)              
+			if [[ $action == allpwr* || $action == query ]]
+			then 
+				send_HTD_cmd.py -a $action > /dev/null
+			elif [ -n "$zone" ]
+			then
+				if [ "$action" = setinput  -a -n "$source" ]
+				then
+					# Setting a source automatically turns on power
+					send_HTD_cmd.py -z $zone -a poweron > /dev/null
+					send_HTD_cmd.py -z $zone -a $action -s $source > /dev/null
+				elif [[ $action == volume* ]]
+				then
+					# Need to call repeatedly until correct volume
+					VOLUMECOUNT=$(send_HTD_cmd.py -a query | gawk -v desiredVolume=$volume -v zone=$zone '$2 ~ zone {split($4,a,"\"");if (a[2] ~ /^[0-9]*$/) print desiredVolume-a[2]}')
+					if [ -n "$VOLUMECOUNT" ]
+					then
+						if [ "$VOLUMECOUNT" -lt 0 ] 
+						then
+							action=volumedown
+							let VOLUMECOUNT=0-VOLUMECOUNT
+						else
+							action=volumeup
+						fi
+						
+						send_HTD_cmd.py -z $zone -a poweron > /dev/null
+						
+						echo "<volumechange>$VOLUMECOUNT</volumechange>"
+						for c in $(seq 1 $VOLUMECOUNT)
+						do
+							send_HTD_cmd.py -z $zone -a $action > /dev/null
+						done
+					fi
+				else
+					send_HTD_cmd.py -z $zone -a $action -d 1>&2
+				fi
+			fi
+
+			;;
+
 GET_SETTINGS)		POOLSETTING='{"getSettings":"all"}';;
+
 esac
 
 
@@ -199,4 +240,5 @@ END {printf("</X10settings>\n") }'
 
 [ -n "$POOLSETTING" ]&&echo "$POOLSETTING"|nc localhost 2222|/usr/local/bin/JSONtoXML.py
 (atq -q c;atq -q d)| gawk '{sub(/:..$/,"",$5);if ($7 == "c") {SpaStartTime=$5} else if ($7 == "d") {SpaStopTime=$5}}END {printf("<SpaTimer on=\"%s\" off=\"%s\"/>\n",SpaStartTime,SpaStopTime)}'
+send_HTD_cmd.py -a query 
 echo "</BODY></HTML>"

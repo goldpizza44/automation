@@ -53,6 +53,8 @@ Content-Type: text/html
 <script type="text/javascript">
 var DimmerTimer;
 var SpaTempTimer;
+var VolumeTimer;
+
 var SprinklerZone;
 var SprinklerState;
 var SprinklerTimer;
@@ -848,6 +850,25 @@ function automation(action) {
                         \$("#voicemailpopup").modal()
                 }
             }
+
+
+            var audiozone=xmldata.getElementsByTagName("audiozone")
+            for (var i=0;i<audiozone.length;i++) {
+                var zone=audiozone[i].getAttribute("zone").toUpperCase()
+                var AUDIOSRC=zone+"_Source"
+                if (audiozone[i].getAttribute("power")=="on") {
+                        document.getElementById(AUDIOSRC).innerHTML=audiozone[i].getAttribute("source")
+                } else {
+                        document.getElementById(AUDIOSRC).innerHTML="off"
+                }
+
+                var AUDIOSLIDER="#"+zone+"_SLIDER"
+                var AUDIOVOLUME=zone+"_Volume"
+		if (audiozone[i].getAttribute("volume") != document.getElementById(AUDIOVOLUME).innerHTML) {
+                        document.getElementById(AUDIOVOLUME).innerHTML=audiozone[i].getAttribute("volume")
+                        \$(AUDIOSLIDER).slider('setValue',parseInt(audiozone[i].getAttribute("volume")));
+                }
+            }
         }
     };
 
@@ -873,6 +894,7 @@ function automation(action) {
     <li style="font-size: 300%;"><a data-toggle="pill" href="#HouseMenu">House</a></li>
     <li style="font-size: 300%;"><a data-toggle="pill" href="#SpaMenu">Spa</a></li>
     <li style="font-size: 300%;"><a data-toggle="pill" href="#VmailMenu">Vmail</a></li>
+    <li style="font-size: 300%;"><a data-toggle="pill" href="#AVMenu">A/V</a></li>
     <li style="font-size: 300%;"><a data-toggle="pill" href="#CalMenu">Calendar</a></li>
 
   </ul>
@@ -1225,6 +1247,47 @@ function automation(action) {
       </div>
       <hr style="border:0;height:1px;background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));"/>
     </div>
+
+    <div id="AVMenu" class="tab-pane fade">
+      <hr style="height:12px;border:0;box-shadow: inset 0 12px 12px -12px rgba(0, 0, 0, 0.5);"/>
+!
+
+for zone in patio kitchen diningroom theatre greatroom masterbedroom
+do
+	eval $(echo $zone | gawk '{printf("export zone_cap=%s;export zone_allcap=%s\n",toupper(substr($1,1,1)) substr($1,2),toupper($1))}')
+	
+	cat <<!
+      <div class="row clearfix">
+        <div class="row">
+          <div class="col-sm-4 text-left"><span style="font-size:200%;color:red;">${zone_cap} Speakers</span></div>
+
+          <div class="col-sm-2"><button id="${zone_allcap}_OFF" onClick="automation('SET_AUDIO&zone=${zone}&action=poweroff')"     type="button" class="btn btn-info btn-lg ">PowerOff</button></div>
+
+          <div class="col-sm-2 text-right"><span style="font-size: 200%">Volume:</span>&nbsp;<span style="font-size: 200%" id="${zone_allcap}_Volume">TBD</span></div>
+          <div class="col-sm-4">0&nbsp;&nbsp;&nbsp; <input id="${zone_allcap}_SLIDER"  data-slider-id="VOL_${zone_allcap}_SLIDER" type="text" data-slider-min="0" data-slider-max="60" data-slider-step="1" data-slider-value="50" data-slider-orientation="horizontal"/> &nbsp;&nbsp;60</div>
+        </div>
+        <P>
+
+        <div class="row">
+          <div class="col-sm-2 text-left"><span style="font-size: 200%">Source:</span>&nbsp;<span style="font-size: 200%"  id="${zone_allcap}_Source">TBD</span></div>
+          <div class="col-sm-6 text-left">&nbsp;</div>
+        </div>
+        <div class="row">
+          <div class="col-sm-2"><button id="${zone_allcap}_1" onClick="automation('SET_AUDIO&action=setinput&zone=${zone}&source=kitchenpc')"     type="button" class="btn btn-info btn-lg ">Kitchen</button></div>
+          <div class="col-sm-2"><button id="${zone_allcap}_2" onClick="automation('SET_AUDIO&action=setinput&zone=${zone}&source=greatroom')"     type="button" class="btn btn-info btn-lg ">GreatRoom</button></div>
+          <div class="col-sm-2"><button id="${zone_allcap}_3" onClick="automation('SET_AUDIO&action=setinput&zone=${zone}&source=masterbedroom')" type="button" class="btn btn-info btn-lg ">MasterBR</button></div>
+          <div class="col-sm-2"><button id="${zone_allcap}_4" onClick="automation('SET_AUDIO&action=setinput&zone=${zone}&source=tempmonitor')"   type="button" class="btn btn-info btn-lg ">TempMonitor</button></div>
+          <div class="col-sm-2"><button id="${zone_allcap}_5" onClick="automation('SET_AUDIO&action=setinput&zone=${zone}&source=theatre')"       type="button" class="btn btn-info btn-lg ">Theatre</button></div>
+          <div class="col-sm-2"><button id="${zone_allcap}_6" onClick="automation('SET_AUDIO&action=setinput&zone=${zone}&source=patio')"         type="button" class="btn btn-info btn-lg ">Patio</button></div>
+        </div>
+        <P>
+      </div>
+      <hr style="border:0;height:1px;background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));"/>
+!
+done
+
+cat <<!
+    </div>
     <div id="CalMenu" class="tab-pane fade">
       <hr style="height:12px;border:0;box-shadow: inset 0 12px 12px -12px rgba(0, 0, 0, 0.5);"/>
       <div class="row clearfix">
@@ -1375,6 +1438,75 @@ document.getElementById("clock").addEventListener('click',function() {
         return 'Current value: ' + value;
     }
 });
+\$('#PATIO_SLIDER').slider({
+//    reversed: true,
+    formatter: function(value) {
+	// Only send if there is a half second pause
+	if (value == 0) return
+	clearTimeout(VolumeTimer);
+	VolumeTimer=setTimeout(function() {automation('SET_AUDIO&zone=patio&action=volume&volume='+value.toString())},500);
+//	document.getElementById('SpaHeater_Target').innerHTML=value.toString()
+
+        return 'Current value: ' + value;
+    }
+});
+\$('#KITCHEN_SLIDER').slider({
+//    reversed: true,
+    formatter: function(value) {
+	// Only send if there is a half second pause
+	if (value == 0) return
+	clearTimeout(VolumeTimer);
+	VolumeTimer=setTimeout(function() {automation('SET_AUDIO&zone=kitchen&action=volume&volume='+value.toString())},500);
+//	document.getElementById('SpaHeater_Target').innerHTML=value.toString()
+
+        return 'Current value: ' + value;
+    }
+});
+\$('#DININGROOM_SLIDER').slider({
+//    reversed: true,
+    formatter: function(value) {
+	// Only send if there is a half second pause
+	if (value == 0) return
+	clearTimeout(VolumeTimer);
+	VolumeTimer=setTimeout(function() {automation('SET_AUDIO&zone=diningroom&action=volume&volume='+value.toString())},500);
+
+        return 'Current value: ' + value;
+    }
+});
+\$('#THEATRE_SLIDER').slider({
+//    reversed: true,
+    formatter: function(value) {
+	// Only send if there is a half second pause
+	if (value == 0) return
+	clearTimeout(VolumeTimer);
+	VolumeTimer=setTimeout(function() {automation('SET_AUDIO&zone=theatre&action=volume&volume='+value.toString())},500);
+
+        return 'Current value: ' + value;
+    }
+});
+\$('#GREATROOM_SLIDER').slider({
+//    reversed: true,
+    formatter: function(value) {
+	// Only send if there is a half second pause
+	if (value == 0) return
+	clearTimeout(VolumeTimer);
+	VolumeTimer=setTimeout(function() {automation('SET_AUDIO&zone=greatroom&action=volume&volume='+value.toString())},500);
+
+        return 'Current value: ' + value;
+    }
+});
+\$('#MASTERBEDROOM_SLIDER').slider({
+//    reversed: true,
+    formatter: function(value) {
+	// Only send if there is a half second pause
+	if (value == 0) return
+	clearTimeout(VolumeTimer);
+	VolumeTimer=setTimeout(function() {automation('SET_AUDIO&zone=masterbedroom&action=volume&volume='+value.toString())},500);
+
+        return 'Current value: ' + value;
+    }
+});
+
 \$('.clockpicker').clockpicker({
     placement: 'top',
     align: 'left',
@@ -1404,7 +1536,3 @@ function SetSpaSched(e) {
 </body>
 </html>
 !
-
-
-
-
