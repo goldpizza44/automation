@@ -578,8 +578,7 @@ except:
         print("Defaulting to MQTT Broker port 1883")
         port = 1883
 
-cmdtopic='poolctl/cmd'
-stattopic='poolctl/stat'
+poolctltopic='poolctl/#'
 
 def on_connect (client, userdata, flags, rc):
         # Set up MQTT subscription
@@ -588,7 +587,7 @@ def on_connect (client, userdata, flags, rc):
 
 
         print("Connected to MQTT broker, result code "+str(rc))
-        client.subscribe(cmdtopic)
+        client.subscribe(poolctltopic)
 #
 # POOL DEVICES:
 # PoolPump -- 4 different settings (slow med high off) (relay command to x10mqtt)
@@ -598,40 +597,67 @@ def on_connect (client, userdata, flags, rc):
 # PoolLight -- Color Select
 # SpaTemp -- degrees
 
-#
-#        for DEVICE in X10DEVICES:
-#                discovery_topic='homeassistant/light/'+DEVICE["alias"]+'/config'
-#                payload = {
-#                        "name"          : DEVICE["alias"],
-#                        "command_topic" : 'x10/cmd/'+DEVICE["alias"],
-#                        "payload_on": "ON",
-#                        "payload_off": "OFF",
-#                        "unique_id": DEVICE["alias"],
-#                        "device": {
-#                                "identifiers": [DEVICE["alias"]],
-#                                "name": DEVICE["alias"],
-#                                "model": DEVICE["type"],
-#                                "manufacturer": "X10"
-#                        }
-#                }
-#
-#                print(discovery_topic)
-#                print(payload)
-#                client.publish(discovery_topic, json.dumps(payload), qos=1, retain=True  )
+def setup_mqtt_devices():
+        discovery_topic='homeassistant/select/PoolPump/config'
+        payload = {
+                "name"          : 'PoolPump',
+                "command_topic" : 'poolctl/cmd/PoolPump/set',
+                "state_topic"  : 'poolctl/stat/PoolPump/state',
+                "options": [ "off", "slow", "med", "high" ],
+                "unique_id": 'PoolPump',
+                "device": {
+                        "identifiers": ['PoolPump'],
+                        "name": 'PoolPump',
+                        "model": "Pump",
+                        "manufacturer": "RaspberryPi"
+                }
+        }
 
+        print(discovery_topic)
+        print(payload)
+        mqtt_client.publish(discovery_topic, json.dumps(payload), qos=1, retain=True  )
 
+        discovery_topic='homeassistant/select/PoolLight/config'
+        payload = {
+                "name"          : 'PoolLight',
+                "command_topic" : 'poolctl/cmd/PoolLight/set',
+                "state_topic"  : 'poolctl/stat/PoolLight/state',
+                "options": [ "Off", "Blue","Green","Red","White","Magenta","Romance","Blue_Green","Red_White_Blue","Orange_Red_Magenta","Red_White_Green_Blue","White_Green_Blue_Magenta","Magenta_Blue_Green_Yellow" ],
+                "unique_id": 'PoolLight',
+                "device": {
+                        "identifiers": ['PoolLight'],
+                        "name": 'PoolLight',
+                        "model": "MultiColorLight",
+                        "manufacturer": "RaspberryPi"
+                }
+        }
+
+        print(discovery_topic)
+        print(payload)
+        mqtt_client.publish(discovery_topic, json.dumps(payload), qos=1, retain=True  )
+
+                                         
 def on_message(client, userdata, message):
 
         # Determine the device from the topic
         # Topics are cmdtopic/dev, e.g. 'x10/cmd/A1'
         # So the last part is the device we want to control
 
-        valveJSON = json.loads(message.payload.decode('utf-8'))
-        print("Received: "+message.topic+" "+json.dumps(valveJSON))
+        command = str(message.payload.decode('utf-8'))
+        print("MQTT Message received: "+command)
 
-        result=ValveAction(valveJSON)
+        try:
+                valveJSON = json.loads(command)
+                print("Received: "+message.topic+" "+json.dumps(valveJSON))
+                result=ValveAction(valveJSON)
+                mqtt_client.publish(stattopic,result,retain=True)
+        except:
+                print("Exception in processing")
+                print(message)
 
-        mqtt_client.publish(stattopic,result,retain=True)
+
+
+
 
 
 
@@ -645,9 +671,7 @@ def mqtt_listener():
         print("Connecting to broker: "+broker+":"+str(port))
         mqtt_client.connect(broker,port)
 
-        # Subscribe to the desired topic
-        mqtt_client.subscribe("your/topic")
-
+        setup_mqtt_devices()
         # Start the loop
         mqtt_client.loop_forever()
 
@@ -705,6 +729,7 @@ if not 'poolctl' in sys.modules:
 
         # Set the poolcolor to a RECALL on start
         poolLight('RECALL')
+ 
 
         # Create a thread for the TCP listener
         tcp_thread = threading.Thread(target=tcp_listener)
