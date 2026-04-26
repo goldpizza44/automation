@@ -1,0 +1,74 @@
+# +-----+-----+---------+------+---+-Model B1-+---+------+---------+-----+-----+
+# | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |
+# +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+
+# |     |     |    3.3v |      |   |  1 || 2  |   |      | 5v      |     |     |
+# |   2 |   8 |   SDA.1 |  OUT | 1 |  3 || 4  |   |      | 5v      |     |     |
+# |   3 |   9 |   SCL.1 |  OUT | 1 |  5 || 6  |   |      | 0v      |     |     |
+# |   4 |   7 | GPIO. 7 |   IN | 1 |  7 || 8  | 1 | OUT  | TxD     | 15  | 14  |
+# |     |     |      0v |      |   |  9 || 10 | 0 | OUT  | RxD     | 16  | 15  |
+# |  17 |   0 | GPIO. 0 |  OUT | 0 | 11 || 12 | 0 | OUT  | GPIO. 1 | 1   | 18  |
+# |  27 |   2 | GPIO. 2 |  OUT | 0 | 13 || 14 |   |      | 0v      |     |     |
+# |  22 |   3 | GPIO. 3 |  OUT | 1 | 15 || 16 | 0 | OUT  | GPIO. 4 | 4   | 23  |
+# |     |     |    3.3v |      |   | 17 || 18 | 1 | OUT  | GPIO. 5 | 5   | 24  |
+# |  10 |  12 |    MOSI |  OUT | 1 | 19 || 20 |   |      | 0v      |     |     |
+# |   9 |  13 |    MISO |   IN | 0 | 21 || 22 | 1 | OUT  | GPIO. 6 | 6   | 25  |
+# |  11 |  14 |    SCLK |  OUT | 0 | 23 || 24 | 1 | OUT  | CE0     | 10  | 8   |
+# |     |     |      0v |      |   | 25 || 26 | 1 | OUT  | CE1     | 11  | 7   |
+# +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+
+# | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |
+# +-----+-----+---------+------+---+-Model B1-+---+------+---------+-----+-----+
+
+# Set the GPIO pins to be used for the binary selectors
+# A0 -> A7  goto the upper Relay board which is negative logic...False = activate relay
+# A8 -> A15 goto the lower Relay board which is positive logic...True  = activate relay
+# Associate the BCM GPIO numbers to the RELAY positions.  Also noted are the pinouts on the header
+# (both main header and P5 header)
+# Negative Logic
+#A0=7  #pin26 11  -- Valve 1 (MainDrainVacuum) CW
+#A1=8  #pin24 10  -- Valve 1 (MainDrainVacuum) CCW
+#A0=7  #pin26 11  -- Valve 1 (Return Spray) CW
+#A1=8  #pin24 10  -- Valve 1 (Return Spray) CCW
+#A2=25 #pin22 6   -- Valve 2 (BubblerReturnSpray) CW
+#A3=24 #pin18 5   -- Valve 2 (BubblerReturnSpray) CCW
+#A4=23 #pin16 4   -- Valve 3 (SpaPool) CW
+#A5=18 #pin12 1   -- Valve 3 (SpaPool) CCW
+#A6=15 #pin10 16  -- Pump Speed 1
+#A7=14 #pin8  15  -- Pump Speed 2
+
+# Positive Logic -- Extra Header
+#A8=28  #pin3    -- Valve 5 (MainDrainSpaPool) CW
+#A9=29  #pin4    -- Valve 5 (MainDrainSpaPool) CCW
+#A10=30 #pin5   -- Valve 4 (SpaFloorJets) CW
+#A11=31 #pin6   -- Valve 4 (SpaFloorJets) CCW
+
+# Positive Logic -- Main  Header
+#A12=3  #pin5 9  -- Pool Light
+#A13=2  #pin3 8  -- Main Pump Power
+#A14=27 #pin13 2  -- Pool Heater
+#A15=17 #pin11 0  -- Pump Speed 3
+
+# GPIOs 22,10,9,11 are Digital inputs from the ADC that reads Pressure and Temp info.
+# These are on Header pins 15,19,21,23
+MainDrainVacuumCW=$([[ $(gpio read 11)==1 ]] && echo "OFF" || echo "ON")
+MainDrainVacuumCCW=$([[ $(gpio read 10)==1 ]] && echo "OFF" || echo "ON")
+BubblerReturnSprayCW=$([[ $(gpio read 6)==1 ]] && echo "OFF" || echo "ON")
+BubblerReturnSprayCCW=$([[ $(gpio read 5)==1 ]] && echo "OFF" || echo "ON")
+SpaPoolCW=$([[ $(gpio read 4)==1 ]] && echo "OFF" || echo "ON")
+SpaPoolCCW=$([[ $(gpio read 1)==1 ]] && echo "OFF" || echo "ON")
+
+PoolHeater=$([[ $(gpio read 2)==0 ]] && echo "OFF" || echo "ON")
+
+PumpSpeed1=$(gpio read 16)
+PumpSpeed2=$(gpio read 15)
+PumpSpeed3=$(gpio read 0)
+
+cat <<! | column -s' ' -t
+Valve CW CCW
+MainDrainVacuum $MainDrainVacuumCW $MainDrainVacuumCCW
+BubblerReturnSpray $BubblerReturnSprayCW $BubblerReturnSprayCCW
+SpaPool $SpaPoolCW $SpaPoolCCW
+
+
+PumpSpeed $PumpSpeed1 $PumpSpeed2 $PumpSpeed3
+PoolHeater $PoolHeater
+!

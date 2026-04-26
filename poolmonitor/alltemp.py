@@ -43,9 +43,9 @@ def on_connect (client, userdata, flags, rc):
     payload = {
 
       "name"          : "poolspatemp",
-      "state_topic" : 'home/sensor/poolspatemp/temperature',
+      "state_topic" : 'alltemp/sensor/poolspatemp/temperature',
       "device_class": 'temperature',
-      "unit_of_measurements": "°F",
+      "unit_of_measurement": "°F",
       "value_template": "{{ value_json.temperature }}",
       "unique_id": "poolspatemp",
       "device": {
@@ -66,8 +66,8 @@ def on_connect (client, userdata, flags, rc):
     # Switch configuration
     payload = {
       "name": "Spa Heater Switch",
-      "command_topic": "homeassistant/switch/spaheater/set",
-      "state_topic": "homeassistant/switch/spaheater/state",
+      "command_topic": "alltemp/switch/spaheater/set",
+      "state_topic": "alltemp/switch/spaheater/state",
       "payload_on": "ON",
       "payload_off": "OFF",
       "state_on": "ON",

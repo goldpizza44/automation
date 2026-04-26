@@ -17,6 +17,7 @@ import sys
 import threading
 import json
 import paho.mqtt.client as mqtt
+import datetime
 
 global DEBUG
 DEBUG=1
@@ -26,8 +27,8 @@ DEBUG=1
 # A8 -> A15 goto the lower Relay board which is positive logic...True  = activate relay
 # Associate the BCM GPIO numbers to the RELAY positions.  Also noted are the pinouts on the header
 # (both main header and P5 header)
-A0=7  #pin26   -- Valve 1 (Return Spray) CW
-A1=8  #pin24   -- Valve 1 (Return Spray) CCW
+A0=8  #pin24   -- Valve 1 (Return Spray) CCW
+A1=7  #pin26   -- Valve 0 (Return Spray) CW
 A2=25 #pin22   -- Valve 2 (BubblerReturnSpray) CW
 A3=24 #pin18   -- Valve 2 (BubblerReturnSpray) CCW
 A4=23 #pin16   -- Valve 3 (SpaPool) CW
@@ -196,7 +197,8 @@ for l in f:
                 featureposition[tuple(flist)]=vpos1
 
                 for feature in flist:
-                        if feature in featurelist: featurelist[feature].append(vpos)
+                        if feature in featurelist:
+                                featurelist[feature].append(vpos)
                         else:
                                 featurelist[feature] = [ vpos ]
                 
@@ -228,7 +230,11 @@ def turnValve(valvename,result,direction,degrees_to_turn=False,seconds_to_turn=F
         result[valvename]='Success'
 
 
-SECS={        45:9.5, 90:19, 135:28.5, 180:40,  }
+# This is a table of degrees to seconds that the actuator needs to be on.  It is based on trial and error.
+SECS={     5: 1.05,  10: 2.10,  15: 3.15,  20: 4.20,  25: 5.25,  30: 6.30,  35: 7.35,  40: 8.40,  45: 9.50,
+          50: 10.55,  55: 11.60,  60: 12.75,  65: 13.80,  70: 14.85,  75: 15.90,  80: 16.95,  85: 18.00,  90: 19.00,
+          95: 20.05,  100: 21.10,  105: 22.15,  110: 23.20,  115: 24.25,  120: 25.30,  125: 26.35,  130: 27.40,  135: 28.50, 
+          140: 29.70,  145: 30.90,  150: 32.10,  155: 33.30,  160: 34.50,  165: 35.70,  170: 36.90,  175: 38.50,  180: 40.00, }
 
 def setValve(valvename,degrees_to_turn,result):
 
@@ -281,10 +287,18 @@ def setValveList(valveChangeList):
         valveResult={}
 
         if DEBUG: print ( "valveChangeList",valveChangeList )
+        print ( "valveChangeList",valveChangeList )
         for valve in valveChangeList:
                 if(not(valve in valveThread)):
                         degrees_to_turn=valveChangeList[valve]-valvesettings[valve]
+                        # Round to the nearest 5 degrees
+                        print("degrees_to_turn1: ",degrees_to_turn)
+                        round(degrees_to_turn / 5) * 5
+                        if degrees_to_turn > 180:
+                                degrees_to_turn = (360 - degrees_to_turn) * -1
                         valveResult[valve]='Unknown'
+                        print("degrees_to_turn2: ",degrees_to_turn)
+
                         try:
                                 valveThread[valve]=threading.Thread(target=setValve, args=(valve,degrees_to_turn,valveResult,))
                                 valveThread[valve].start()
@@ -313,7 +327,10 @@ def setValveList(valveChangeList):
         return getValveList()
 
 def equalSetting(setting1,setting2):
-        for i in range(0,3):
+        if len(setting1) != len(setting2):
+                print("ERROR: trying to compare settings of unequal length")
+                return False
+        for i in range(len(setting1)):
                 if(setting1[i] != -1 and setting2[i]!= -1 and setting1[i]!=setting2[i]):
                         return False
         return True
@@ -330,18 +347,22 @@ def getFeatureList():
 
         f.close()
 
-        currentPos=(valvesettings['SpaFloorJets'],valvesettings['SpaPool'],valvesettings['BubblerReturnSpray'],valvesettings['ReturnSpray'])
+        currentPos=tuple([valvesettings[column[i]] for i in range(len(column))])
 
         for vpos in positionlist:
                 if equalSetting(currentPos,vpos):
                         newFeatures=positionlist[vpos]        
+                        break
 
         # newFeatures contains the current features that are on
         
         fl={}
         for feature in featurelist:
-                if feature in newFeatures: fl[feature]="on"
-                else: fl[feature]="off"                
+
+                if feature in newFeatures:
+                        fl[feature]="on"
+                else:
+                        fl[feature]="off"
 
         return fl
 
@@ -603,7 +624,7 @@ def setup_mqtt_devices():
                 "name"          : 'PoolPump',
                 "command_topic" : 'poolctl/cmd/PoolPump/set',
                 "state_topic"  : 'poolctl/stat/PoolPump/state',
-                "options": [ "off", "slow", "med", "high" ],
+                "options": [ "Off", "500", "1250", "2750" ],
                 "unique_id": 'PoolPump',
                 "device": {
                         "identifiers": ['PoolPump'],
@@ -616,13 +637,15 @@ def setup_mqtt_devices():
         print(discovery_topic)
         print(payload)
         mqtt_client.publish(discovery_topic, json.dumps(payload), qos=1, retain=True  )
+        mqtt_client.publish('poolctl/stat/PoolPump/state', "1250", qos=1, retain=True)
+
 
         discovery_topic='homeassistant/select/PoolLight/config'
         payload = {
                 "name"          : 'PoolLight',
                 "command_topic" : 'poolctl/cmd/PoolLight/set',
                 "state_topic"  : 'poolctl/stat/PoolLight/state',
-                "options": [ "Off", "Blue","Green","Red","White","Magenta","Romance","Blue_Green","Red_White_Blue","Orange_Red_Magenta","Red_White_Green_Blue","White_Green_Blue_Magenta","Magenta_Blue_Green_Yellow" ],
+                "options": [  "Unknown", "Blue","Green","Red","White","Magenta","Romance","Blue_Green","Red_White_Blue","Orange_Red_Magenta","Red_White_Green_Blue","White_Green_Blue_Magenta","Magenta_Blue_Green_Yellow" ],
                 "unique_id": 'PoolLight',
                 "device": {
                         "identifiers": ['PoolLight'],
@@ -636,26 +659,133 @@ def setup_mqtt_devices():
         print(payload)
         mqtt_client.publish(discovery_topic, json.dumps(payload), qos=1, retain=True  )
 
-                                         
-def on_message(client, userdata, message):
+        discovery_topic='homeassistant/switch/SpaHeaterMasterSwitch/config'
+        payload = {
+                "name"          : 'SpaHeater Switch',
+                "command_topic" : 'poolctl/cmd/SpaHeater/set',
+                "state_topic"  : 'poolctl/stat/SpaHeater/state',
+                "payload_on": "ON",
+                "payload_off": "OFF",
+                "state_on": "ON",
+                "state_off": "OFF",
+                "unique_id": 'SpaHeaterSwitch',
+                "device": {
+                        "identifiers": ['SpaHeater Switch'],
+                        "name": 'Custom Spa Heater Relay',
+                        "model": "Custom",
+                        "manufacturer": "RaspberryPi"
+                }
+        }
 
-        # Determine the device from the topic
-        # Topics are cmdtopic/dev, e.g. 'x10/cmd/A1'
-        # So the last part is the device we want to control
+        print(discovery_topic)
+        print(payload)
+        mqtt_client.publish(discovery_topic, json.dumps(payload), qos=1, retain=True  )
 
+
+        valvelist=getValveList()
+        print("valvelist:\n"+json.dumps(valvelist,indent=4))
+
+        for valve in valvelist:
+                discovery_topic = 'homeassistant/number/'+valve+'/config'
+
+                payload = {
+                        "name":                valve+' Direction',
+                        "command_topic":       'poolctl/cmd/'+valve+'/set',
+                        "state_topic":         'poolctl/stat/'+valve+'/state',
+                        "min":                 0,
+                        "max":                 360,
+                        "step":                1,
+                        "unit_of_measurement": "°",
+                        "unique_id":           valve.lower()+'_direction',
+                        "availability_topic":  'poolctl/valve/'+valve+'/availability',
+                        "retain": True,
+                        "device": {
+                                "identifiers": ['PoolValve_'+valve ],
+                                "name": valve+' Direction',
+                                "model": "Custom",
+                                "manufacturer": "PoolValve"
+                        }
+                        
+
+                }
+    
+
+                mqtt_client.publish(discovery_topic, json.dumps(payload), qos=1, retain=True)
+                mqtt_client.publish('poolctl/valve/' + valve + '/availability', 'online', qos=1, retain=True)
+                mqtt_client.publish('poolctl/stat/'  + valve + '/state', valvelist[valve], qos=1, retain=True)
+
+                # NEW: sensor discovery for dashboard display
+                discovery_topic = 'homeassistant/sensor/'+valve+'/config'
+                payload = {
+                        "name":                valve+' Position',
+                        "state_topic":         'poolctl/stat/'+valve+'/state',
+                        "unit_of_measurement": "°",
+                        "unique_id":           valve.lower()+'_position',
+                        "availability_topic":  'poolctl/valve/'+valve+'/availability',
+                        "icon":                "mdi:rotate-right",
+                        "device": {
+                               "identifiers": ['PoolValve_'+valve],
+                               "name": valve+' Direction',
+                               "model": "Custom",
+                               "manufacturer": "PoolValve"
+                        }
+                }
+
+                mqtt_client.publish(discovery_topic, json.dumps(payload), qos=1, retain=True)
+
+def on_message(client, userdata, message): 
         command = str(message.payload.decode('utf-8'))
-        print("MQTT Message received: "+command)
+        topic = message.topic.split('/')
+        print("[{}] MQTT Topic: {} = {}".format(datetime.datetime.now(),topic,command))
+        if topic[0] != 'poolctl' or len(topic) < 4:
+                print("ERROR: topic too short or wrong prefix")
+                return
 
-        try:
-                valveJSON = json.loads(command)
-                print("Received: "+message.topic+" "+json.dumps(valveJSON))
-                result=ValveAction(valveJSON)
-                mqtt_client.publish(stattopic,result,retain=True)
-        except:
-                print("Exception in processing")
-                print(message)
+        # Dispatch to a background thread immediately so the MQTT loop stays alive
+        t = threading.Thread(target=handle_message, args=(client, topic, command), daemon=True)
+        t.start()
 
 
+def handle_message(client, topic, command):
+    try:
+        if topic[1] == 'cmd' and topic[3] == 'set':
+            if topic[2] == 'PoolPump':
+                if   command == 'off':  valveJSON={"poolSetting":{"MainPump":"off","PumpSpeed1":"off","PumpSpeed2":"off","PumpSpeed3":"off"}}
+                elif command == '2750': valveJSON={"poolSetting":{"MainPump":"on","PumpSpeed1":"on","PumpSpeed2":"off","PumpSpeed3":"off"}}
+                elif command == '1250': valveJSON={"poolSetting":{"MainPump":"on","PumpSpeed2":"on","PumpSpeed1":"off","PumpSpeed3":"off"}}
+                elif command == '500':  valveJSON={"poolSetting":{"MainPump":"on","PumpSpeed3":"on","PumpSpeed1":"off","PumpSpeed2":"off"}}
+            elif topic[2] == 'PoolLight':
+                if command == 'Off': valveJSON={"poolSetting":{"PoolLight":"off"}}
+                else:                valveJSON={"poolColor":{"Color": command}}
+            else:
+                valveJSON={"valveSetting":{ topic[2]: int(command) }}
+
+            print("valveJSON from MQTT = " + json.dumps(valveJSON))
+            result = ValveAction(valveJSON)
+            client.publish('poolctl/stat/'+topic[2]+'/state', command, qos=1, retain=True)
+
+        elif topic[1] == 'cmd' and topic[2] == 'valveSettings' and topic[3] == 'get':
+            valvesettings = getValveList()
+            for valve in valvesettings:
+                client.publish('poolctl/stat/'+valve+'/state', valvesettings[valve], qos=1, retain=True)
+            client.publish('poolctl/stat/valveSettings/state', json.dumps(valvesettings), qos=1, retain=True)
+
+        elif topic[1] == 'cmd' and topic[2] == 'poolSettings' and topic[3] == 'get':
+            poolsettings = getPoolList()
+            # If we restarted, and don't know the pool light color, then set to unknown
+            if poolsettings['PoolLight'] == "RECALL":  poolsettings['PoolLight'] = "Unknown"
+
+            client.publish('poolctl/stat/poolSettings/state', json.dumps(poolsettings), qos=1, retain=True)
+            client.publish('poolctl/stat/PoolPump/state', poolsettings['MainPump'],qos=1,retain=True)
+            client.publish('poolctl/stat/PoolLight/state', poolsettings['PoolLight'],qos=1,retain=True)
+            client.publish('poolctl/stat/SpaHeater/state', poolsettings['SpaHeater'],qos=1,retain=True)
+
+
+        elif topic[1] == 'stat' and topic[3] == 'state':
+            print("Skipping State Update")
+
+    except Exception as e:
+        print("handle_message exception: ",e)
 
 
 
