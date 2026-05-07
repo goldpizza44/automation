@@ -236,7 +236,7 @@ def readadc (adcnum, clockpin, mosipin, misopin, cspin):
         GPIO.output(cspin,True)
 
         adcout >>=1
-        print("adcout",adcnum," from readadc: ",adcout)
+#        print("adcout",adcnum," from readadc: ",adcout)
         return adcout
 
 def monitor_temps():
